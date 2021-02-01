@@ -3,7 +3,7 @@ CNT 5105C "Computer Networks" - Spring 2021
 Group Project
 Lavanya Khular, Chitranshu Raj, Benjamin Hsu
 
-Last Edited: 1/23/2021
+Last Edited: 2/1/2021
 */
 
 //Created package to group together all the various .java files together
@@ -103,8 +103,25 @@ public class ReadPeerInfo
     }
 
     //PeerInfo.cfg public accessor methods
+
     public List<PeerObject> getPeersInfo()
     {
         return peers;
+    }
+
+    //search the peers to find the given peer id #, and return its index position (e.g. 0, 1, 2, etc.) in the list
+    public int getPeerIndexPosition(int peerId)
+    {
+        //iterate through the list of peers
+        for(int i = 0; i < this.peers.size(); i++)
+        {
+            if(peerId == peers.get(i).getPeerId())
+            {
+                return i;
+            }
+        }
+
+        //if this has been reached, then the peer id # was not found, so return error value -1
+        return -1;
     }
 }

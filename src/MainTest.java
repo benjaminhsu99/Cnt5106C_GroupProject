@@ -1,11 +1,9 @@
 //Just a simple temporary main method to call on and see if the other java files work correctly
 
-
-//Created package to group together all the various .java files together
 package src;
-import src.modules.*;
 
 //Imports
+import src.modules.*;
 import java.util.*; //List, ArrayList, Iterator
 import java.nio.file.*; //Files, Path
 
@@ -14,6 +12,14 @@ public class MainTest
     public static void main(String[] args)
     {
         System.out.print("MainTest Hello!\n");
+
+        System.out.print("\nCommand Line arguments # count: " + args.length + "\n");
+        for(int i = 0; i < args.length; i++)
+        {
+            System.out.print("Arg: " + args[i] + "\n");
+        }
+        System.out.print("\n");
+
         System.out.print("From Common.cfg, the number of preferred neighbors was read to be: " + ReadCommon.getNumberOfPreferredNeighbors() + "\n");
         System.out.print("From Common.cfg, the unchoking interval was read to be: " + ReadCommon.getUnchokingInterval() + "\n");
         System.out.print("From Common.cfg, the optimistic unchoking interval was read to be: " + ReadCommon.getOptimisticUnchokingInterval() + "\n");
@@ -32,5 +38,9 @@ public class MainTest
             peers.get(i).getHasFile() + 
             "\n");
         }
+
+        System.out.print("Peer ID 1000 position index is: " + readPeerInfoInstance.getPeerIndexPosition(1000) + "\n");
+        System.out.print("Peer ID 1001 position index is: " + readPeerInfoInstance.getPeerIndexPosition(1001) + "\n");
+        System.out.print("Peer ID 1002 position index is: " + readPeerInfoInstance.getPeerIndexPosition(1002) + "\n");
     }
 }
