@@ -3,7 +3,7 @@ CNT 5105C "Computer Networks" - Spring 2021
 Group Project
 Lavanya Khular, Chitranshu Raj, Benjamin Hsu
 
-Last Edited: 1/23/2021
+Last Edited: 2/18/2021
 */
 
 //Created package to group together all the various .java files together
@@ -13,6 +13,7 @@ package src.modules;
 import java.io.*; //Exceptions, File, BufferedReader
 import java.util.*; //List, ArrayList, Iterator
 import java.nio.file.*; //Files, Path
+import java.lang.*; //Math
 
 public class ReadCommon
 {
@@ -26,6 +27,7 @@ public class ReadCommon
     private static final String fileName;
     private static final int fileSize;
     private static final int pieceSize;
+    private static final int numberOfPieces;
     private static List<String> commonFileLines;
 
     //Static block that reads the Common.cfg file
@@ -138,6 +140,8 @@ public class ReadCommon
         fileSize = tempFileSize;
         pieceSize = tempPieceSize;
         
+        //calculate the number of pieces, rounding up to the nearest int
+        numberOfPieces = (int)Math.ceil((double)fileSize / pieceSize);
     }
 
     //Common.cfg public accessor methods
@@ -164,5 +168,9 @@ public class ReadCommon
     public static int getPieceSize()
     {
         return pieceSize;
+    }
+    public static int getNumberOfPieces()
+    {
+        return numberOfPieces;
     }
 }

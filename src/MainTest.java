@@ -26,6 +26,7 @@ public class MainTest
         System.out.print("From Common.cfg, the file name was read to be: " + ReadCommon.getFileName() + "\n");
         System.out.print("From Common.cfg, the file size was read to be: " + ReadCommon.getFileSize() + "\n");
         System.out.print("From Common.cfg, the piece size was read to be: " + ReadCommon.getPieceSize() + "\n");
+        System.out.print("From Common.cfg, the number of pieces was read to be: " + ReadCommon.getNumberOfPieces() + "\n");
         
         ReadPeerInfo readPeerInfoInstance = new ReadPeerInfo();
         List<PeerObject> peers = readPeerInfoInstance.getPeersInfo();
