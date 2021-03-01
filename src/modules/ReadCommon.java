@@ -1,9 +1,7 @@
 /*
 CNT 5105C "Computer Networks" - Spring 2021
-Group Project
-Lavanya Khular, Chitranshu Raj, Benjamin Hsu
-
-Last Edited: 2/18/2021
+Group Project - P2P File Sharing
+Benjamin Hsu, Lavanya Khular, Chitranshu Raj
 */
 
 //Created package to group together all the various .java files together
@@ -36,7 +34,7 @@ public class ReadCommon
         //first read in the file
         try
         {
-            //convert the file's string name into Path type object
+            //convert the file's string name into a Path type object
             Path commonFilePath = Paths.get(commonFileName);
 
             //read the file's lines in entirety first

@@ -1,16 +1,14 @@
 /*
 CNT 5105C "Computer Networks" - Spring 2021
-Group Project
-Lavanya Khular, Chitranshu Raj, Benjamin Hsu
-
-Last Edited: 2/1/2021
+Group Project - P2P File Sharing
+Benjamin Hsu, Lavanya Khular, Chitranshu Raj
 */
 
 //Created package to group together all the various .java files together
 package src.modules;
 
 //Imports
-import java.io.*; //Exceptions, File, BufferedReader
+import java.io.*; //Exceptions, BufferedReader
 import java.util.*; //List, ArrayList, Iterator
 import java.nio.file.*; //Files, Path
 
@@ -29,7 +27,7 @@ public class ReadPeerInfo
         //first read in the file
         try
         {
-            //convert the file's string names into Path type objects
+            //convert the file's string name into a Path type object
             Path peerFilePath = Paths.get(peerFileName);
 
             //read the file's lines in entirety first

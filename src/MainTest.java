@@ -1,4 +1,9 @@
-//Just a simple temporary main method to call on and see if the other java files work correctly
+/*
+CNT 5105C "Computer Networks" - Spring 2021
+Group Project - P2P File Sharing
+Benjamin Hsu, Lavanya Khular, Chitranshu Raj
+*/
+//Just a simple temporary main method for debugging, to call on and see if the other java files work correctly
 
 package src;
 
@@ -43,5 +48,20 @@ public class MainTest
         System.out.print("Peer ID 1000 position index is: " + readPeerInfoInstance.getPeerIndexPosition(1000) + "\n");
         System.out.print("Peer ID 1001 position index is: " + readPeerInfoInstance.getPeerIndexPosition(1001) + "\n");
         System.out.print("Peer ID 1002 position index is: " + readPeerInfoInstance.getPeerIndexPosition(1002) + "\n");
+
+        FileWriter testFile = new FileWriter(999);
+        System.out.print("\nA test peer subfolder with peerId 999 was created, and an empty P2P file in it was created. Check the file directory to see if it's there.");
+        byte[] firstWriteTest = {'d', 'e', 'f'};
+        testFile.writePiece(1, firstWriteTest);
+        System.out.print("Piece size index 1 with contents def was written.\n");
+        byte[] secondWriteTest = {'A'};
+        testFile.writePiece(17, secondWriteTest);
+        System.out.print("Piece size index 17 (last piece with size 1) with contents A was written.\n");
+        byte[] firstReadTest = testFile.readPiece(1);
+        System.out.print("Piece index 1 of size " + firstReadTest.length + " was read with contents " + new String(firstReadTest) + "\n");
+        byte[] secondReadTest = testFile.readPiece(17);
+        System.out.print("Piece index 17 of size " + secondReadTest.length + " was read with contents " + new String(secondReadTest) + "\n");
+        byte[] thirdReadTest = testFile.readPiece(0);
+        System.out.print("Piece index 0 of size " + thirdReadTest.length + " was read with contents (should be random undefined or null contents since not written) " + new String(thirdReadTest) + "\n");
     }
 }

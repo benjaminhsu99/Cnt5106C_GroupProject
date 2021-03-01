@@ -1,9 +1,7 @@
 /*
 CNT 5105C "Computer Networks" - Spring 2021
-Group Project
-Lavanya Khular, Chitranshu Raj, Benjamin Hsu
-
-Last Edited: 2/1/2021
+Group Project - P2P File Sharing
+Benjamin Hsu, Lavanya Khular, Chitranshu Raj
 */
 
 package src;
