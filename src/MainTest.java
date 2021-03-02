@@ -10,8 +10,8 @@ package src;
 //Imports
 import src.modules.*;
 
-import java.util.*; //List, ArrayList, Iterator
-import java.nio.file.*; //Files, Path
+import java.util.*;
+import java.nio.file.*;
 
 public class MainTest
 {
@@ -91,5 +91,40 @@ public class MainTest
         System.out.print("Test log had piece downloaded message added.\n");
         testLog.logComplete();
         System.out.print("Test log had all-complete message added.\n");
+
+        System.out.print("\nFirst Peer\n");
+        for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+        {
+            System.out.print(peers.get(0).hasPiece(i) + " ");
+        }
+        System.out.print("\nSecond Peer\n");
+        for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+        {
+            System.out.print(peers.get(1).hasPiece(i) + " ");
+        }
+        System.out.print("\n");
+        peers.get(1).setBitfieldPieceAsTrue(3);
+        System.out.print("Set second peer's bit index 3 to true.\n");
+        for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+        {
+            System.out.print(peers.get(1).hasPiece(i) + " ");
+        }
+        System.out.print("\n");
+        byte[] firstPeerBitsetAsBytes = peers.get(0).getBitfieldAsBytes();
+        byte[] secondPeerBitsetAsBytes = peers.get(1).getBitfieldAsBytes();
+        peers.get(0).setBitfieldFromBytes(secondPeerBitsetAsBytes);
+        peers.get(1).setBitfieldFromBytes(firstPeerBitsetAsBytes);
+        System.out.print("After swapping\n");
+        System.out.print("First Peer\n");
+        for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+        {
+            System.out.print(peers.get(0).hasPiece(i) + " ");
+        }
+        System.out.print("\nSecond Peer\n");
+        for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+        {
+            System.out.print(peers.get(1).hasPiece(i) + " ");
+        }
+        System.out.print("\n");
     }
 }
