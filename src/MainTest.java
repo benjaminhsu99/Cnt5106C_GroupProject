@@ -9,6 +9,7 @@ package src;
 
 //Imports
 import src.modules.*;
+
 import java.util.*; //List, ArrayList, Iterator
 import java.nio.file.*; //Files, Path
 
@@ -35,6 +36,7 @@ public class MainTest
         
         ReadPeerInfo readPeerInfoInstance = new ReadPeerInfo();
         List<PeerObject> peers = readPeerInfoInstance.getPeersInfo();
+        PeerObject[] peerArrayForLater = new PeerObject[peers.size()];
         for(int i = 0; i < peers.size(); i++)
         {
             System.out.print("PEER INDEX #" + i + ": " + 
@@ -43,6 +45,7 @@ public class MainTest
             peers.get(i).getHostName() + " " + 
             peers.get(i).getHasFile() + 
             "\n");
+            peerArrayForLater[i] = peers.get(i);
         }
 
         System.out.print("Peer ID 1000 position index is: " + readPeerInfoInstance.getPeerIndexPosition(1000) + "\n");
@@ -50,7 +53,7 @@ public class MainTest
         System.out.print("Peer ID 1002 position index is: " + readPeerInfoInstance.getPeerIndexPosition(1002) + "\n");
 
         FileWriter testFile = new FileWriter(999);
-        System.out.print("\nA test peer subfolder with peerId 999 was created, and an empty P2P file in it was created. Check the file directory to see if it's there.");
+        System.out.print("\nA test peer subfolder with peerId 999 was created, and an empty P2P file in it was created. Check the file directory to see if it's there.\n");
         byte[] firstWriteTest = {'d', 'e', 'f'};
         testFile.writePiece(1, firstWriteTest);
         System.out.print("Piece size index 1 with contents def was written.\n");
@@ -63,5 +66,30 @@ public class MainTest
         System.out.print("Piece index 17 of size " + secondReadTest.length + " was read with contents " + new String(secondReadTest) + "\n");
         byte[] thirdReadTest = testFile.readPiece(0);
         System.out.print("Piece index 0 of size " + thirdReadTest.length + " was read with contents (should be random undefined or null contents since not written) " + new String(thirdReadTest) + "\n");
+
+        LogWriter testLog = new LogWriter(999);
+        System.out.print("\nA test log file with peerId 999 was created. Check the file directory to see if it's there.\n");
+        testLog.logSendConnection(111);
+        System.out.print("Test log had a send-connection to fake peer 111 entry.\n");
+        testLog.logReceiveConnection(11111);
+        System.out.print("Test log had a receive-connection to fake peer 111 entry.\n");
+        testLog.logChangePreferredNeighbors(peerArrayForLater);
+        System.out.print("Test log had change of preferred message added.\n");
+        testLog.logChangeOptimisticNeighbor(peerArrayForLater[0]);
+        System.out.print("Test log had change of optimistic message added.\n");
+        testLog.logUnchoked(222);
+        System.out.print("Test log had unchoked message added.\n");
+        testLog.logChoked(333);
+        System.out.print("Test log had choked message added.\n");
+        testLog.logHave(444, 5);
+        System.out.print("Test log had have message added.\n");
+        testLog.logInterested(555);
+        System.out.print("Test log had interested message added.\n");
+        testLog.logNotInterested(777);
+        System.out.print("Test log had not interested message added.\n");
+        testLog.logDownload(888, 9, 50);
+        System.out.print("Test log had piece downloaded message added.\n");
+        testLog.logComplete();
+        System.out.print("Test log had all-complete message added.\n");
     }
 }

@@ -10,6 +10,7 @@ package src.modules;
 //Imports
 import java.io.*; //Exceptions, RandomAccessFile
 import java.nio.file.*; //Files, Path
+import java.lang.*; //Integer
 
 public class FileWriter
 {

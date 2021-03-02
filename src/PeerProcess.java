@@ -16,7 +16,9 @@ import java.io.*; //IOException, OutputStream
 public class PeerProcess extends Thread
 {
     //parameters
-    static List<PeerObject> peers;
+    static private List<PeerObject> peers;
+    private PeerObject[] preferredNeighbors;
+    private PeerObject optimisticNeighbor;
 
     //methods
     public static void main(String[] args)
@@ -59,6 +61,9 @@ public class PeerProcess extends Thread
             System.exit(1);
         }
 
+        //start a LogWriter instance
+        LogWriter logger = new LogWriter(myPeerId);
+
         //array that will hold the Socket connection to peers
         Socket[] peerSockets = new Socket[peers.size() - 1];
 
@@ -68,6 +73,7 @@ public class PeerProcess extends Thread
             for(int i = myPeerIndexPosition - 1; i >= 0; i--)
             {
                 Socket connectToHostSocket = new Socket(peers.get(i).getHostName(), peers.get(i).getPortNumber());
+                logger.logSendConnection(peers.get(i).getPeerId());
 System.out.print("Peer " + myPeerId + " started a connection to " + peers.get(i).getPeerId() + ".\n");
                 peerSockets[i] = connectToHostSocket;
                 peers.get(i).setSocket(connectToHostSocket);
@@ -85,6 +91,7 @@ System.out.print("Peer " + myPeerId + " started a connection to " + peers.get(i)
             for(int i = myPeerIndexPosition + 1; i < peers.size(); i++)
             {
                 Socket clientSocket = serverSocket.accept();
+                logger.logReceiveConnection(peers.get(i).getPeerId());
 System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i).getPeerId() + ".\n");
                 peerSockets[i-1] = clientSocket;
                 peers.get(i).setSocket(clientSocket);
