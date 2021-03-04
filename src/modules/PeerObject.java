@@ -18,10 +18,11 @@ public class PeerObject
     private final int peerId;
     private final String hostName;
     private final int portNumber;
-    private boolean hasFile;
+    private volatile boolean hasFile;
     private Socket socket;
     private volatile int bytesDownloadedFrom;
     private volatile BitSet bitfield;
+    private volatile boolean[] requested;
     private volatile boolean interested;
 
     //object constructor
@@ -53,6 +54,13 @@ public class PeerObject
             bitfield.clear();
         }
 
+        //set the default values of requested pieces to false
+        this.requested = new boolean[ReadCommon.getNumberOfPieces()];
+        for(int i = 0; i < this.requested.length; i++)
+        {
+            requested[i] = false;
+        }
+
         //set default value of interested to false
         this.interested = false;
     }
@@ -74,6 +82,28 @@ public class PeerObject
     {
         return this.hasFile;
     }
+    public boolean checkHasFile()
+    {
+        //check every bit in the bitfield
+        boolean hasAllPieces = true;
+        for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+        {
+            if(false == this.bitfield.get(i))
+            {
+                hasAllPieces = false;
+                break;
+            }
+        }
+
+        //if all the file's pieces are present, and if it hasn't been marked before, then mark "hasFile" as true
+        if(true == hasAllPieces && false == this.hasFile)
+        {
+            this.hasFile = true;
+        }
+
+        //return whether the peer has all bitfield pieces (i.e. has the file) or not
+        return hasAllPieces;
+    }
     public Socket getSocket()
     {
         return this.socket;
@@ -81,6 +111,18 @@ public class PeerObject
     public void setSocket(Socket socket)
     {
         this.socket = socket;
+    }
+    public void closeSocket()
+    {
+        try
+        {
+            this.socket.close();
+        }
+        catch(IOException exception)
+        {
+            System.out.print("Error (but no action taken): Some IO Exception on trying to close socket of peer " + this.peerId + ".\n");
+            exception.printStackTrace();
+        }
     }
     public void addBytesDownloadedFrom(int bytesDownloaded)
     {
@@ -99,7 +141,7 @@ public class PeerObject
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
         {
-            System.out.print("ERROR: FileWriter.java getNumberOfPieces() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.out.print("ERROR: FileWriter.java hasPiece() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
             System.exit(1);
         }
 
@@ -121,13 +163,49 @@ public class PeerObject
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
         {
-            System.out.print("ERROR: FileWriter.java getNumberOfPieces() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.out.print("ERROR: FileWriter.java setBitFieldPieceAsTrue() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
             System.exit(1);
         }
 
         //else set the bitfield to true, for the specified piece
         //Bitset's set() method changes the indicated index to the second parameter's value
         this.bitfield.set(pieceIndex, true);
+    }
+    public boolean isCurrentlyRequested(int pieceIndex)
+    {
+        //error-check: check if the piece index is within bounds
+        if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
+        {
+            System.out.print("ERROR: FileWriter.java isCurrentlyRequested() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.exit(1);
+        }
+
+        //else return whether the piece is currently already requested
+        return this.requested[pieceIndex];
+    }
+    public void setAsRequested(int pieceIndex)
+    {
+        //error-check: check if the piece index is within bounds
+        if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
+        {
+            System.out.print("ERROR: FileWriter.java setAsRequested() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.exit(1);
+        }
+
+        //set the piece as requested
+        this.requested[pieceIndex] = true;
+    }
+    public void clearRequested(int pieceIndex)
+    {
+        //error-check: check if the piece index is within bounds
+        if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
+        {
+            System.out.print("ERROR: FileWriter.java clearRequested() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.exit(1);
+        }
+
+        //set the piece as not-requested
+        this.requested[pieceIndex] = false;
     }
     public boolean getInterested()
     {

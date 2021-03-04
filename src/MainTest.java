@@ -89,7 +89,7 @@ public class MainTest
         System.out.print("Test log had not interested message added.\n");
         testLog.logDownload(888, 9, 50);
         System.out.print("Test log had piece downloaded message added.\n");
-        testLog.logComplete();
+        testLog.logComplete(999);
         System.out.print("Test log had all-complete message added.\n");
 
         System.out.print("\nFirst Peer\n");

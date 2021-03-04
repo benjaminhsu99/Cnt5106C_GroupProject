@@ -239,12 +239,12 @@ public class LogWriter
         }
     }
 
-    public void logComplete()
+    public void logComplete(int peerId)
     {
         //write the log entry
         try
         {
-            this.theLog.append("[" + getTime() + "]: Peer " + this.myPeerId + " has downloaded the complete file.\n");
+            this.theLog.append("[" + getTime() + "]: Peer " + peerId + " has downloaded the complete file.\n");
             this.theLog.flush();
         }
         catch(IOException exception)
