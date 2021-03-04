@@ -36,31 +36,39 @@ public class ClientThread extends Thread
             //create a DataOutputStream (using a OutputStream in the constructor) that can send data to the TCP socket
             this.socketStream = new DataOutputStream(this.neighborPeer.getSocket().getOutputStream());
 System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " started.\n");
-            //continously send messages at this listening socket until the client closes the TCP socket (which causes a SocketException)
-            //while(true)
-            {
-                //receieve the handshake
-                sendHandshake();
 
+            //send the initial handshake
+            sendHandshake();
+            //send the bitfield after the initial handshake
+            sendBitfield();
+
+            //continously send messages to the TCP socket until both peers of the socket have the file
+            //while(false == this.myPeer.getHasFile() || false == this.neighborPeer.getHasFile())
+            {
+                
 
             }
-System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " ended.\n");
+
+Thread.sleep(5000);
+            //close the socket (which should cause the ServerThread to close via SocketException or EOFException)
+            this.neighborPeer.getSocket().close();
+System.out.print("ClientThread told ServerThread " + this.neighborPeer.getPeerId() + " to kill itself.\n");
         }
-        catch(SocketException exception)
-        {
-            //this means the socket was closed by the PeerProcess.java process
-            //so do nothing (which means the Thread will end naturally)
-        }
+catch(InterruptedException e)
+{
+
+}
         catch(IOException exception)
         {
             System.out.print("ERROR: ClientThread.java --- some IO error in the loop that sends to the TCP connection.\n");
             exception.printStackTrace();
             System.exit(1);
         }
+System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " ended.\n");
     }
 
     //helper methods
-    void sendHandshake() throws SocketException, IOException
+    void sendHandshake() throws IOException
     {
         String headerAsString = "P2PFILESHARINGPROJ";
         //convert the string to a byte array
@@ -76,12 +84,32 @@ System.out.print("Sent header to " + this.neighborPeer.getPeerId() + ".\n");
         {
             zeroBytes[i] = (byte)0;
         }
-        //semd the 0-bytes
+        //send the 0-bytes
         socketStream.write(zeroBytes, 0, zeroBytes.length);
 System.out.print("Sent zero bytes to " + this.neighborPeer.getPeerId() + ".\n");
 
         //send the 4-byte int peerId
         socketStream.writeInt(this.myPeer.getPeerId());
 System.out.print("Sent peerId to " + this.neighborPeer.getPeerId() + ".\n");
+    }
+
+    void sendBitfield()  throws IOException
+    {
+        //get the bitfield as bytes
+        byte[] bitfield = myPeer.getBitfieldAsBytes();
+
+        //calculate the message length (message type 1 byte + the bitfield length in bytes)
+        int messageLength = 1 + bitfield.length;
+        //send the 4-byte int message length
+        socketStream.writeInt(messageLength);
+System.out.print("Sent bitfield message length " + this.neighborPeer.getPeerId() + ".\n");
+
+        //send the 1-byte message type (5 = bitfield)
+        socketStream.writeByte(5);
+System.out.print("Sent bitfield message type " + this.neighborPeer.getPeerId() + ".\n");
+
+        //send the bitfield
+        socketStream.write(bitfield, 0, bitfield.length);
+System.out.print("Sent bitfield bitfield as bytes to " + this.neighborPeer.getPeerId() + ".\n");
     }
 }

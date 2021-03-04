@@ -8,7 +8,7 @@ Benjamin Hsu, Lavanya Khular, Chitranshu Raj
 package src.modules;
 
 //Imports
-import java.io.*; //IOException, InputStream, DataInputStream
+import java.io.*; //IOException, EOFException, InputStream, DataInputStream
 import java.net.*; //SocketException
 import java.nio.charset.*; //StandardCharsets
 
@@ -36,20 +36,51 @@ public class ServerThread extends Thread
             //create a DataInputStream (using a InputStream in the constructor) that can receive data from the TCP socket
             this.socketStream = new DataInputStream(this.neighborPeer.getSocket().getInputStream());
 System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " started.\n");
+
+            //receieve the initial handshake
+            receiveHandshake();
+
             //continously accept messages at this listening socket until the client closes the TCP socket (which causes a SocketException)
-            //while(true)
+            while(true)
             {
-                //receieve the handshake
-                receiveHandshake();
+                //read the 4-byte int that is the message's message length
+                int messageLength = this.socketStream.readInt();
+                //the messageLength must always be at least 1 byte (for messageType)
+                if(1 > messageLength)
+                {
+                    System.out.print("ERROR: ServerThread.java read message header loops --- from peer " + this.neighborPeer.getPeerId() + " message length is " + messageLength + " which is less than 1.\n");
+                    System.exit(1);
+                }
+
+                //read the 1-byte int that is the message type
+                int messageType = this.socketStream.readByte();
+
+                //5 = Handshake
+                if(5 == messageType)
+                {
+                    receiveBitfield(messageLength - 1);
+                }
+                //otherwise, this was not a valid message type code
+                else
+                {
+                    System.out.print("ERROR: ServerThread.java read message header loops --- from peer " + this.neighborPeer.getPeerId() + " message type is " + messageType + " which is not valid.\n");
+                    System.exit(1);
+                }
 
 
             }
-System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " ended.\n");
         }
         catch(SocketException exception)
         {
-            //this means the socket was closed by the PeerProcess.java process
+            //this means the socket was closed by a ClientThread process
             //so do nothing (which means the Thread will end naturally)
+System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " KILLED BY SOCKETEXCEPTION ended.\n");
+        }
+        catch(EOFException exception)
+        {
+            //this means the socket was closed by a ClientThread process
+            //so do nothing (which means the Thread will end naturally)
+System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " KILLED BY EOFEXCEPTION ended.\n");
         }
         catch(IOException exception)
         {
@@ -57,6 +88,7 @@ System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " ended.\
             exception.printStackTrace();
             System.exit(1);
         }
+System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " ended.\n");
     }
 
     //helper methods
@@ -100,5 +132,25 @@ System.out.print("From peer " + this.neighborPeer.getPeerId() + " got handshake 
             System.exit(1);
         }
 System.out.print("Got completed handshake from " + handshakePeerId + ".\n");
+    }
+
+    void receiveBitfield(int payloadLength) throws SocketException, IOException
+    {
+        //byte array to hold the bitfield string as bytes
+        byte[] bitfieldAsBytes = new byte[payloadLength];
+        //read in the bitfield payload
+        this.socketStream.readFully(bitfieldAsBytes);
+System.out.print("From peer " + this.neighborPeer.getPeerId() + " got bitfield.\n");
+
+        //enter the bitfield into the peer's PeerObject bitfield parameter
+        this.neighborPeer.setBitfieldFromBytes(bitfieldAsBytes);
+        //check if the peer has the full file
+        boolean neighborHasFile = this.neighborPeer.checkHasFile();
+        //if the neighbor has the file, log that neighbor as having "completed the download"
+        if(true == neighborHasFile)
+        {
+            this.logger.logComplete(this.neighborPeer.getPeerId());
+        }
+System.out.print("From peer " + this.neighborPeer.getPeerId() + " set the PeerObject's bitfield.\n");
     }
 }

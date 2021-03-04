@@ -57,8 +57,9 @@ public class PeerProcess extends Thread
 //
         }
 
-        //close the server threads
-        //myPeerProcess.closeThreads();
+        //wait for the client and server threads to finish
+        myPeerProcess.closeThreads();
+myPeerProcess.allComplete();
     }
 
     //class parameters
@@ -236,17 +237,12 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
 
     private void closeThreads()
     {
-        //send close messages to each of the neighbor TCP sockets
-        for(int i = 0; i < this.neighborPeers.length; i++)
-        {
-            this.neighborPeers[i].closeSocket();
-        }
-
-        //close the server threads
+        //wait for client and server threads to finish
         for(int i = 0; i < this.neighborPeers.length; i++)
         {
             try
             {
+                this.clientThreads[i].join();
                 this.serverThreads[i].join();
             }
             catch(InterruptedException exception)
