@@ -103,7 +103,7 @@ public class MainTest
             System.out.print(peers.get(1).hasPiece(i) + " ");
         }
         System.out.print("\n");
-        peers.get(1).setBitfieldPieceAsTrue(3);
+        peers.get(1).setBitfieldPieceAsTrue(3, testLog);
         System.out.print("Set second peer's bit index 3 to true.\n");
         for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
         {
@@ -112,8 +112,8 @@ public class MainTest
         System.out.print("\n");
         byte[] firstPeerBitsetAsBytes = peers.get(0).getBitfieldAsBytes();
         byte[] secondPeerBitsetAsBytes = peers.get(1).getBitfieldAsBytes();
-        peers.get(0).setBitfieldFromBytes(secondPeerBitsetAsBytes);
-        peers.get(1).setBitfieldFromBytes(firstPeerBitsetAsBytes);
+        peers.get(0).setBitfieldFromBytes(secondPeerBitsetAsBytes, testLog);
+        peers.get(1).setBitfieldFromBytes(firstPeerBitsetAsBytes, testLog);
         System.out.print("After swapping\n");
         System.out.print("First Peer\n");
         for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)

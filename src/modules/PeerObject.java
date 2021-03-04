@@ -8,8 +8,8 @@ Benjamin Hsu, Lavanya Khular, Chitranshu Raj
 package src.modules;
 
 //Imports
-import java.io.*; //Exceptions, File, BufferedReader
-import java.util.*; //List, ArrayList, BitSet
+import java.io.*; //Exceptions
+import java.util.*; //BitSet
 import java.net.*; //Socket
 
 public class PeerObject
@@ -18,18 +18,12 @@ public class PeerObject
     private final int peerId;
     private final String hostName;
     private final int portNumber;
-    private volatile boolean hasFile;
+    private boolean hasFile;
     private Socket socket;
     private volatile int bytesDownloadedFrom;
-    private volatile BitSet bitfield;
-    private volatile int[] requested;
-    private volatile boolean interested;
-
-    private final Object hasFileLock = new Object();
-    private final Object bytesDownloadedFromLock = new Object();
-    private final Object bitfieldLock = new Object();
-    private final Object requestedLock = new Object();
-    private final Object interestedLock = new Object();
+    private BitSet bitfield;
+    private int[] requested;
+    private boolean interested;
 
     //object constructor
     public PeerObject(int peerId, String hostName, int portNumber, boolean hasFile)
@@ -86,38 +80,7 @@ public class PeerObject
     }
     public boolean getHasFile()
     {
-        synchronized(hasFileLock)
-        {
-            return this.hasFile;
-        }
-    }
-    public boolean checkHasFile()
-    {
-        //check every bit in the bitfield
-        boolean hasAllPieces = true;
-        synchronized(bitfieldLock)
-        {
-            for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
-            {
-                if(false == this.bitfield.get(i))
-                {
-                    hasAllPieces = false;
-                    break;
-                }
-            }
-        }
-
-        //if all the file's pieces are present, and if it hasn't been marked before, then mark "hasFile" as true
-        synchronized(hasFileLock)
-        {
-            if(true == hasAllPieces && false == this.hasFile)
-            {
-                this.hasFile = true;
-            }
-        }
-
-        //return whether the peer has all bitfield pieces (i.e. has the file) or not
-        return hasAllPieces;
+        return this.hasFile;
     }
     public Socket getSocket()
     {
@@ -141,24 +104,15 @@ public class PeerObject
     }
     public void addBytesDownloadedFrom(int bytesDownloaded)
     {
-        synchronized(bytesDownloadedFromLock)
-        {
-            this.bytesDownloadedFrom += bytesDownloaded;
-        }
+        this.bytesDownloadedFrom += bytesDownloaded;
     }
     public void resetBytesDownloadedFrom()
     {
-        synchronized(bytesDownloadedFromLock)
-        {
-            this.bytesDownloadedFrom = 0;
-        }
+        this.bytesDownloadedFrom = 0;
     }
     public int getBytesDownloadedFrom()
     {
-        synchronized(bytesDownloadedFromLock)
-        {
-            return this.bytesDownloadedFrom;
-        }
+        return this.bytesDownloadedFrom;
     }
     public boolean hasPiece(int pieceIndex)
     {
@@ -169,29 +123,38 @@ public class PeerObject
             System.exit(1);
         }
 
-        synchronized(bitfieldLock)
-        {
-            //else return the boolean value of the bitfield, for the piece specified
-            return this.bitfield.get(pieceIndex);
-        }
+        //else return the boolean value of the bitfield, for the piece specified
+        return this.bitfield.get(pieceIndex);
     }
     public byte[] getBitfieldAsBytes()
     {
-        synchronized(bitfieldLock)
-        {
-            //BitSet's valueOf() method converts a Bitfield to a little-endian byte array
-            return this.bitfield.toByteArray();
-        }
+        //BitSet's valueOf() method converts a Bitfield to a little-endian byte array
+        return this.bitfield.toByteArray();
     }
-    public void setBitfieldFromBytes(byte[] bitfieldAsBytes)
+    public void setBitfieldFromBytes(byte[] bitfieldAsBytes, LogWriter logger)
     {
-        synchronized(bitfieldLock)
+        //BitSet's valueOf() method converts a little-endian byte array to a BitField
+        this.bitfield = BitSet.valueOf(bitfieldAsBytes);
+
+        //check if the receieve bitfield indicates that the peer has the full file
+        //check every bit in the bitfield
+        boolean hasAllPieces = true;
+        for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
         {
-            //BitSet's valueOf() method converts a little-endian byte array to a BitField
-            this.bitfield = BitSet.valueOf(bitfieldAsBytes);
+            if(false == this.bitfield.get(i))
+            {
+                hasAllPieces = false;
+                break;
+            }
+        }
+
+        //if all the file's pieces are present, then the message as the peer having "completed the download" (technically it already had it)
+        if(true == hasAllPieces)
+        {
+            logger.logComplete(this.peerId);
         }
     }
-    public void setBitfieldPieceAsTrue(int pieceIndex)
+    public void setBitfieldPieceAsTrue(int pieceIndex, LogWriter logger)
     {
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
@@ -200,11 +163,30 @@ public class PeerObject
             System.exit(1);
         }
         
-        synchronized(bitfieldLock)
+        //else set the bitfield to true, for the specified piece
+        //Bitset's set() method changes the indicated index to the second parameter's value
+        this.bitfield.set(pieceIndex, true);
+
+        //check if this causes the hasFile status to change from false to true
+        if(false == this.hasFile)
         {
-            //else set the bitfield to true, for the specified piece
-            //Bitset's set() method changes the indicated index to the second parameter's value
-            this.bitfield.set(pieceIndex, true);
+            //check every bit in the bitfield
+            boolean hasAllPieces = true;
+            for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+            {
+                if(false == this.bitfield.get(i))
+                {
+                    hasAllPieces = false;
+                    break;
+                }
+            }
+
+            //if all the file's pieces are present, then mark "hasFile" as true and log the message as having completed the download
+            if(true == hasAllPieces)
+            {
+                this.hasFile = true;
+                logger.logComplete(this.peerId);
+            }
         }
     }
     public int isCurrentlyRequested(int pieceIndex)
@@ -216,12 +198,8 @@ public class PeerObject
             System.exit(1);
         }
 
-        synchronized(requestedLock)
-        {
- 
-            //else return whether the piece is currently already requested
-            return this.requested[pieceIndex];
-        }
+        //else return whether the piece is currently already requested
+        return this.requested[pieceIndex];
     }
     public void setAsRequested(int pieceIndex, int peerIdRequestedFrom)
     {
@@ -232,38 +210,26 @@ public class PeerObject
             System.exit(1);
         }
         
-        synchronized(requestedLock)
-        {
-            //set the piece as requested
-            this.requested[pieceIndex] = peerIdRequestedFrom;
-        }
+        //set the piece as requested
+        this.requested[pieceIndex] = peerIdRequestedFrom;
     }
     public void clearRequested(int peerIdRequestedFrom)
     {
-        synchronized(requestedLock)
+        //find any instances of the peerId specified and set the piece as not-requested (represented by -1)
+        for(int i = 0; i < this.requested.length; i++)
         {
-            //find any instances of the peerId specified and set the piece as not-requested (represented by -1)
-            for(int i = 0; i < this.requested.length; i++)
+            if(peerIdRequestedFrom == this.requested[i])
             {
-                if(peerIdRequestedFrom == this.requested[i])
-                {
-                    this.requested[i] = -1;
-                }
+                this.requested[i] = -1;
             }
         }
     }
     public boolean getInterested()
     {
-        synchronized(interestedLock)
-        {
-            return this.interested;
-        }
+        return this.interested;
     }
     public void setInterested(boolean interested)
     {
-        synchronized(interestedLock)
-        {
-            this.interested = interested;
-        }
+        this.interested = interested;
     }
 }

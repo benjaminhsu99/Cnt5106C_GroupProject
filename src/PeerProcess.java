@@ -38,8 +38,7 @@ public class PeerProcess extends Thread
         }
 
         //read the ".cfg" files
-        //and start and receive TCP connections to neighbors
-        //and start server threads that receive TCP messages from neighbors
+        //the constructor also starts TCP connections to neighbor peers
         PeerProcess myPeerProcess = new PeerProcess(myPeerId);
 
         //start the server threads that receive TCP messages from neighbors
@@ -48,18 +47,26 @@ public class PeerProcess extends Thread
         //start the client threads that send TCP messages to neighbors
         myPeerProcess.startClientThreads();
 
+        //link the client threads to the server threads, since the client is chosen to be the one to
+        //modify any PeerObject variables (in order to avoid race conditions)
+        myPeerProcess.linkClientToServerThreads();
+
         //in a while loop, determine which peer partners to send either data to, or send other messages (e.g. requests) to,
         //until all peers (including self) have finished downloading everything
-        //while(false == myPeerProcess.allComplete())
+        while(false == myPeerProcess.allThreadsTerminated())
         {
 //
 //DO STUFF HERE
 //
+            //determine the top bytes-downloaded-from peers, and change preferred + optimistic neighbors, and reset the bytes counts
+            synchronized(myPeerProcess.getPeerProcessLock())
+            {
+
+            }
         }
 
         //wait for the client and server threads to finish
         myPeerProcess.closeThreads();
-myPeerProcess.allComplete();
     }
 
     //class parameters
@@ -67,6 +74,7 @@ myPeerProcess.allComplete();
     private PeerObject[] neighborPeers;
     private ServerThread[] serverThreads;
     private ClientThread[] clientThreads;
+    private final Object peerProcessLock = new Object();
     private PeerObject[] preferredNeighbors;
     private PeerObject optimisticNeighbor;
     private LogWriter logger;
@@ -97,7 +105,7 @@ myPeerProcess.allComplete();
         }
         //assign this process's peer to the myPeer parameter
         this.myPeer = peers.get(myPeerIndexPosition);
-        //if this process's peer already has the file, then log it as having completed the download already
+        //if this process's peer already has the file, then log it as having "completed the download" already (technically it didn't download anything)
         if(true == this.myPeer.getHasFile())
         {
             this.logger.logComplete(this.myPeer.getPeerId());
@@ -158,8 +166,6 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
             exception.printStackTrace();
             System.exit(1);
         }
-
-
     }
 
     //helper methods
@@ -180,59 +186,40 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
         this.clientThreads = new ClientThread[this.neighborPeers.length];
         for(int i = 0; i < this.clientThreads.length; i++)
         {
-            clientThreads[i] = new ClientThread(this.neighborPeers[i], this.myPeer, this.logger);
+            clientThreads[i] = new ClientThread(this.neighborPeers[i], this.myPeer, this.logger, this.peerProcessLock);
             clientThreads[i].start();
         }
     }
 
-    //check if all the peers' (including self) bitfields are complete, which would mean all files are fully downloaded
-    private boolean allComplete()
+    private void linkClientToServerThreads()
     {
-        boolean allComplete = true;
-
-        //check if own bitfield is filled
-        if(false == this.myPeer.getHasFile())
+        //set the server's pointers to the clients each other
+        for(int i = 0; i < this.serverThreads.length; i++)
         {
-            boolean doesPeerHaveFile;
-            //call the checkHasFile() function, which will check the bitfield and change "hasFile" if all bits are present (it has the file now)
-            doesPeerHaveFile = this.myPeer.checkHasFile();
+            this.serverThreads[i].linkClientThread(this.clientThreads[i]);
+        }
+    }
 
-            //log a "peer has completed download of file" entry if the peer did gain the file
-            if(true == doesPeerHaveFile)
+    public Object getPeerProcessLock()
+    {
+        return this.peerProcessLock;
+    }
+
+    private boolean allThreadsTerminated()
+    {
+        boolean allThreadsTerminated = true;
+
+        //check if all server and client threads have completed
+        for(int i = 0; i < this.serverThreads.length; i++)
+        {
+            if(Thread.State.TERMINATED != this.serverThreads[i].getState() || Thread.State.TERMINATED != this.clientThreads[i].getState())
             {
-                this.logger.logComplete(this.myPeer.getPeerId());
-            }
-            //else make the "allComplete" return parameter false
-            else
-            {
-                allComplete = false;
+                allThreadsTerminated = false;
+                break;
             }
         }
 
-        //check if neighbor peers' bitfields are all filled
-        for(int i = 0; i < this.neighborPeers.length; i++)
-        {
-            if(false == this.neighborPeers[i].getHasFile())
-            {
-                boolean doesPeerHaveFile;
-                //call the checkHasFile() function, which will check the bitfield and change "hasFile" if all bits are present (it has the file now)
-                doesPeerHaveFile = this.neighborPeers[i].checkHasFile();
-
-                //log a "peer has completed download of file" entry if the peer did gain the file
-                if(true == doesPeerHaveFile)
-                {
-                    this.logger.logComplete(this.neighborPeers[i].getPeerId());
-                }
-                //else make the "allComplete" return parameter false
-                else
-                {
-                    allComplete = false;
-                }
-            }
-        }
-
-        //return whether or not all the peers (including self) have the file
-        return allComplete;
+        return allThreadsTerminated;
     }
 
     private void closeThreads()

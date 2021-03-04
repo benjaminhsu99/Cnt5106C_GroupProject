@@ -20,6 +20,8 @@ public class ServerThread extends Thread
     private LogWriter logger;
     private DataInputStream socketStream;
 
+    private ClientThread clientThread;
+
     //constructor
     public ServerThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger)
     {
@@ -36,6 +38,14 @@ public class ServerThread extends Thread
             //create a DataInputStream (using a InputStream in the constructor) that can receive data from the TCP socket
             this.socketStream = new DataInputStream(this.neighborPeer.getSocket().getInputStream());
 System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " started.\n");
+
+            //wait until the sibling ClientThread has been created
+            //the ClientThread will be the one that will modify the peer's PeerObject
+            //in order to avoid race conditions, so all new data is passed to the ClientThread
+            while(null == this.clientThread)
+            {
+                //block until clientThread is linked
+            }
 
             //receieve the initial handshake
             receiveHandshake();
@@ -92,7 +102,12 @@ System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " ended.\
     }
 
     //helper methods
-    void receiveHandshake() throws SocketException, IOException
+    public void linkClientThread(ClientThread clientThread)
+    {
+        this.clientThread = clientThread;
+    }
+
+    private void receiveHandshake() throws SocketException, IOException
     {
         //byte array to hold the 18-byte string as bytes
         byte[] headerAsBytes = new byte[18];
@@ -100,7 +115,6 @@ System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " ended.\
         this.socketStream.readFully(headerAsBytes);
         //convert the bytes to String
         String headerAsString = new String(headerAsBytes, StandardCharsets.UTF_8);
-System.out.print("From peer " + this.neighborPeer.getPeerId() + " got handshake header " + headerAsString + "\n");
         //check if the header is "P2PFILESHARINGPROJ" as specified in the project specifications
         if(false == headerAsString.equals("P2PFILESHARINGPROJ"))
         {
@@ -121,7 +135,6 @@ System.out.print("From peer " + this.neighborPeer.getPeerId() + " got handshake 
                 System.exit(1);
             }
         }
-System.out.print("From peer " + this.neighborPeer.getPeerId() + " got handshake zero bytes.\n");
 
         //read the 4-byte int that is the handshake's peerId
         int handshakePeerId = this.socketStream.readInt();
@@ -134,23 +147,17 @@ System.out.print("From peer " + this.neighborPeer.getPeerId() + " got handshake 
 System.out.print("Got completed handshake from " + handshakePeerId + ".\n");
     }
 
-    void receiveBitfield(int payloadLength) throws SocketException, IOException
+    private void receiveBitfield(int payloadLength) throws SocketException, IOException
     {
-        //byte array to hold the bitfield string as bytes
+        //byte array to hold the bitfield payload as bytes
         byte[] bitfieldAsBytes = new byte[payloadLength];
         //read in the bitfield payload
         this.socketStream.readFully(bitfieldAsBytes);
-System.out.print("From peer " + this.neighborPeer.getPeerId() + " got bitfield.\n");
 
-        //enter the bitfield into the peer's PeerObject bitfield parameter
-        this.neighborPeer.setBitfieldFromBytes(bitfieldAsBytes);
-        //check if the peer has the full file
-        boolean neighborHasFile = this.neighborPeer.checkHasFile();
-        //if the neighbor has the file, log that neighbor as having "completed the download"
-        if(true == neighborHasFile)
-        {
-            this.logger.logComplete(this.neighborPeer.getPeerId());
-        }
-System.out.print("From peer " + this.neighborPeer.getPeerId() + " set the PeerObject's bitfield.\n");
+        //pass the bitfield to the ClientProcess for it to enter into the PeerObject
+        //so as to avoid two concurrent threads sharing the bitfield portion fo the PeerObject
+        ThreadMessage messageToClient = new ThreadMessage(bitfieldAsBytes);
+        this.clientThread.addThreadMessage(messageToClient);
+System.out.print("Received bitfield from peer " + this.neighborPeer.getPeerId() + " and forwarded to ClientThread.\n");
     }
 }
