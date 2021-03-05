@@ -11,7 +11,8 @@ package src.modules;
 import java.io.*; //IOException, OutputStream, DataOutputStream
 import java.net.*; //SocketException
 import java.nio.charset.*; //StandardCharsets
-import java.util.*; //Queue, LinkedList
+import java.util.*; //Queue
+import java.util.concurrent.*; //ArrayBlockingQueue
 
 public class ClientThread extends Thread
 {
@@ -20,17 +21,22 @@ public class ClientThread extends Thread
     private PeerObject myPeer;
     private LogWriter logger;
     private final Object peerProcessLock;
+    private final Object clientThreadLock;
     private DataOutputStream socketStream;
 
-    private Queue<ThreadMessage> messagesFromServer = new LinkedList<ThreadMessage>();
+    //ArrayBlockingQueue for thread-safe message passing between threads
+    //its constructor requires specifying outright the capacity of the queue
+    //assume that 100 capacity is good enough??? (unknown how much slower the ClientThread might be than the ServerThread)
+    private volatile Queue<ThreadMessage> messagesFromServer = new ArrayBlockingQueue<ThreadMessage>(100);
 
     //constructor
-    public ClientThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger, Object peerProcessLock)
+    public ClientThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger, Object peerProcessLock, Object clientThreadLock)
     {
         this.neighborPeer = neighborPeer;
         this.myPeer = myPeer;
         this.logger = logger;
         this.peerProcessLock = peerProcessLock;
+        this.clientThreadLock = clientThreadLock;
     }
 
     //the "main" method (override the run() method) that is executed for the Thread
@@ -54,9 +60,15 @@ System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " started
                 if(false == this.messagesFromServer.isEmpty())
                 {
                     ThreadMessage topMessage = this.messagesFromServer.remove();
+
+                    //examine what kind of message task the ServerThread sent
                     if(ThreadMessage.ThreadMessageType.BITFIELD == topMessage.getThreadMessageType())
                     {
                         processBitfieldMessage(topMessage);
+                    }
+                    else if(ThreadMessage.ThreadMessageType.INTERESTSTATUS == topMessage.getThreadMessageType())
+                    {
+                        processInterestStatusMessage(topMessage);
                     }
                 }
                 //otherwise, determine a piece to request for
@@ -90,10 +102,30 @@ System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " ended.\
         this.messagesFromServer.add(messageFromServer);
     }
 
-    private void processBitfieldMessage(ThreadMessage bitfieldMessage)
+    private void processBitfieldMessage(ThreadMessage bitfieldMessage) throws IOException
     {
         this.neighborPeer.setBitfieldFromBytes(bitfieldMessage.getBitfield(), this.logger);
+
+        determineInterest();
 System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " received bitfield from ServerThread and processed it.\n");
+    }
+
+    private void processInterestStatusMessage(ThreadMessage interestStatusMessage)
+    {
+        //change the PeerObject value for the neighbor peer
+        this.neighborPeer.setNeighborInterested(interestStatusMessage.getInterestStatus());
+
+        //log the event
+        if(true == interestStatusMessage.getInterestStatus())
+        {
+            this.logger.logInterested(this.neighborPeer.getPeerId());
+System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " received Interested message from ServerThread and processed it.\n");
+        }
+        else
+        {
+            this.logger.logNotInterested(this.neighborPeer.getPeerId());
+System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " received NOT-Interested message from ServerThread and processed it.\n");
+        }
     }
 
     private void sendHandshake() throws IOException
@@ -119,23 +151,78 @@ System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " receive
 System.out.print("ClientThread sent complete handshake to " + this.neighborPeer.getPeerId() + ".\n");
     }
 
-    private void sendBitfield()  throws IOException
+    private void sendBitfield() throws IOException
     {
-        //get the bitfield as bytes
-        byte[] bitfield = myPeer.getBitfieldAsBytes();
+        synchronized(this.clientThreadLock)
+        {
+            //get the bitfield as bytes
+            byte[] bitfield = myPeer.getBitfieldAsBytes();
 
-        //calculate the message length (message type 1 byte + the bitfield length in bytes)
-        int messageLength = 1 + bitfield.length;
+            //calculate the message length (message type 1 byte + the bitfield length in bytes)
+            int messageLength = 1 + bitfield.length;
+            //send the 4-byte int message length
+            socketStream.writeInt(messageLength);
+
+            //send the 1-byte message type (5 = bitfield)
+            socketStream.writeByte(5);
+
+            //send the bitfield
+            socketStream.write(bitfield, 0, bitfield.length);
+        }
+System.out.print("ClientThread sent complete bitfield message to peer " + this.neighborPeer.getPeerId() + ".\n");
+    }
+    
+    private void determineInterest() throws IOException
+    {
+        synchronized(this.clientThreadLock)
+        {
+            boolean initialInterestState = this.neighborPeer.getMyInterested();
+            boolean neighborHasMissing = false;
+            //find if the neighbor has any missing piece
+            for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+            {
+                if(false == this.myPeer.hasPiece(i) && true == this.neighborPeer.hasPiece(i))
+                {
+                    neighborHasMissing = true;
+                    break;
+                }
+            }
+            
+            //check if the interest state should change and change interest state (and send message to peer) if so
+            if(false == initialInterestState && true == neighborHasMissing)
+            {
+                this.neighborPeer.setMyInterested(true);
+                sendInterested();
+            }
+            else if(true == initialInterestState && false == neighborHasMissing)
+            {
+                this.neighborPeer.setMyInterested(false);
+                sendNotInterested();
+            }
+        }
+    }
+
+    private void sendInterested() throws IOException
+    {
+        //set message length (message type 1 byte + 0 payload)
+        int messageLength = 1;
         //send the 4-byte int message length
         socketStream.writeInt(messageLength);
-System.out.print("Sent bitfield message length " + this.neighborPeer.getPeerId() + ".\n");
 
-        //send the 1-byte message type (5 = bitfield)
-        socketStream.writeByte(5);
-System.out.print("Sent bitfield message type " + this.neighborPeer.getPeerId() + ".\n");
+        //send the 1-byte message type (2 = interested)
+        socketStream.writeByte(2);
+System.out.print("ClientThread sent interested message to " + this.neighborPeer.getPeerId() + ".\n");
+    }
 
-        //send the bitfield
-        socketStream.write(bitfield, 0, bitfield.length);
-System.out.print("Sent bitfield bitfield as bytes to " + this.neighborPeer.getPeerId() + ".\n");
+    private void sendNotInterested() throws IOException
+    {
+        //set message length (message type 1 byte + 0 payload)
+        int messageLength = 1;
+        //send the 4-byte int message length
+        socketStream.writeInt(messageLength);
+
+        //send the 1-byte message type (3 = not interested)
+        socketStream.writeByte(3);
+System.out.print("ClientThread sent NOT-interested message to " + this.neighborPeer.getPeerId() + ".\n");
     }
 }

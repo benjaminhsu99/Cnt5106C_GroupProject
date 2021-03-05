@@ -17,17 +17,30 @@ public class ThreadMessage
     //parameters
     public enum ThreadMessageType
     {
-        BITFIELD;
+        BITFIELD,
+        INTERESTSTATUS,
+        CHOKE,
+        UNCHOKE;
     }
     ThreadMessageType threadMessageType;
 
     private byte[] bitfield;
+    private boolean interestStatus;
 
     //constructors
     public ThreadMessage(byte[] bitfield)
     {
         this.threadMessageType = ThreadMessageType.BITFIELD;
         this.bitfield = bitfield;
+    }
+    public ThreadMessage(boolean interestStatus)
+    {
+        this.threadMessageType = ThreadMessageType.INTERESTSTATUS;
+        this.interestStatus = interestStatus;
+    }
+    public ThreadMessage(ThreadMessageType threadMessageType)
+    {
+        this.threadMessageType = threadMessageType;
     }
 
     //accessor methods
@@ -38,5 +51,9 @@ public class ThreadMessage
     public byte[] getBitfield()
     {
         return this.bitfield;
+    }
+    public boolean getInterestStatus()
+    {
+        return this.interestStatus;
     }
 }

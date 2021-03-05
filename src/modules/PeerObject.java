@@ -18,12 +18,16 @@ public class PeerObject
     private final int peerId;
     private final String hostName;
     private final int portNumber;
-    private boolean hasFile;
+    private volatile boolean hasFile;
     private Socket socket;
     private volatile int bytesDownloadedFrom;
-    private BitSet bitfield;
+    private volatile BitSet bitfield;
     private int[] requested;
-    private boolean interested;
+    private volatile boolean neighborInterested;
+    private volatile boolean myInterested;
+    private volatile boolean neighborChoked;
+    private volatile boolean myChoked;
+    private ClientThread clientThread;
 
     //object constructor
     public PeerObject(int peerId, String hostName, int portNumber, boolean hasFile)
@@ -62,7 +66,12 @@ public class PeerObject
         }
 
         //set default value of interested to false
-        this.interested = false;
+        this.neighborInterested = false;
+        this.myInterested = false;
+
+        //set default value of choked to true
+        this.neighborChoked = true;
+        this.myChoked = true;
     }
 
     //accessor methods
@@ -224,12 +233,44 @@ public class PeerObject
             }
         }
     }
-    public boolean getInterested()
+    public boolean getNeighborInterested()
     {
-        return this.interested;
+        return this.neighborInterested;
     }
-    public void setInterested(boolean interested)
+    public void setNeighborInterested(boolean neighborInterested)
     {
-        this.interested = interested;
+        this.neighborInterested = neighborInterested;
+    }
+    public boolean getMyInterested()
+    {
+        return this.myInterested;
+    }
+    public void setMyInterested(boolean myInterested)
+    {
+        this.myInterested = myInterested;
+    }
+    public boolean getNeighborChoked()
+    {
+        return this.neighborChoked;
+    }
+    public void setNeighborChoked(boolean neighborChoked)
+    {
+        this.neighborChoked = neighborChoked;
+    }
+    public boolean getMyChoked()
+    {
+        return this.myChoked;
+    }
+    public void setMyChoked(boolean myChoked)
+    {
+        this.myChoked = myChoked;
+    }
+    public void setClientThread(ClientThread clientThread)
+    {
+        this.clientThread = clientThread;
+    }
+    public ClientThread getClientThread()
+    {
+        return this.clientThread;
     }
 }

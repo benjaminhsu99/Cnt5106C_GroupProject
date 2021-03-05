@@ -20,7 +20,7 @@ public class ServerThread extends Thread
     private LogWriter logger;
     private DataInputStream socketStream;
 
-    private ClientThread clientThread;
+    private  ClientThread clientThread;
 
     //constructor
     public ServerThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger)
@@ -65,8 +65,18 @@ System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " started
                 //read the 1-byte int that is the message type
                 int messageType = this.socketStream.readByte();
 
+                //2 = Interested
+                if(2 == messageType)
+                {
+                    receiveInterested();
+                }
+                //3 = Not Interested
+                else if(3 == messageType)
+                {
+                    receiveNotInterested();
+                }
                 //5 = Handshake
-                if(5 == messageType)
+                else if(5 == messageType)
                 {
                     receiveBitfield(messageLength - 1);
                 }
@@ -155,9 +165,27 @@ System.out.print("Got completed handshake from " + handshakePeerId + ".\n");
         this.socketStream.readFully(bitfieldAsBytes);
 
         //pass the bitfield to the ClientProcess for it to enter into the PeerObject
-        //so as to avoid two concurrent threads sharing the bitfield portion fo the PeerObject
+        //so as to avoid two concurrent threads modifying the bitfield portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(bitfieldAsBytes);
         this.clientThread.addThreadMessage(messageToClient);
 System.out.print("Received bitfield from peer " + this.neighborPeer.getPeerId() + " and forwarded to ClientThread.\n");
+    }
+
+    private void receiveInterested() throws SocketException, IOException
+    {
+        //pass a message to the ClientProcess for it to change PeerObject's interested status
+        //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
+        ThreadMessage messageToClient = new ThreadMessage(true);
+        this.clientThread.addThreadMessage(messageToClient);
+System.out.print("Received Interested message from " + this.neighborPeer.getPeerId() + " and forwarded to ClientThread.\n");
+    }
+
+    private void receiveNotInterested() throws SocketException, IOException
+    {
+        //pass a message to the ClientProcess for it to change PeerObject's interested status
+        //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
+        ThreadMessage messageToClient = new ThreadMessage(false);
+        this.clientThread.addThreadMessage(messageToClient);
+System.out.print("Received NOT-Interested message from " + this.neighborPeer.getPeerId() + " and forwarded to ClientThread.\n");
     }
 }
