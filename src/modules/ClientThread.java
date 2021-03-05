@@ -14,6 +14,8 @@ import java.nio.charset.*; //StandardCharsets
 import java.util.*; //Queue
 import java.util.concurrent.*; //ArrayBlockingQueue
 
+import javax.lang.model.util.ElementScanner14;
+
 public class ClientThread extends Thread
 {
     //parameters
@@ -44,7 +46,7 @@ public class ClientThread extends Thread
     {
         try
         {
-System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " started.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
             //create a DataOutputStream (using a OutputStream in the constructor) that can send data to the TCP socket
             this.socketStream = new DataOutputStream(this.neighborPeer.getSocket().getOutputStream());
 
@@ -70,6 +72,26 @@ System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " started
                     {
                         processInterestStatusMessage(topMessage);
                     }
+                    else if(ThreadMessage.ThreadMessageType.SENDCHOKE == topMessage.getThreadMessageType())
+                    {
+                        sendChokeOrUnchoke(true);
+                    }
+                    else if(ThreadMessage.ThreadMessageType.SENDUNCHOKE == topMessage.getThreadMessageType())
+                    {
+                        sendChokeOrUnchoke(false);
+                    }
+                    else if(ThreadMessage.ThreadMessageType.RECEIVEDCHOKE == topMessage.getThreadMessageType())
+                    {
+                        processChokeOrUnchoke(true);
+                    }
+                    else if(ThreadMessage.ThreadMessageType.RECEIVEDUNCHOKE == topMessage.getThreadMessageType())
+                    {
+                        processChokeOrUnchoke(false);
+                    }
+                    else
+                    {
+                        System.out.print("ERROR: CLIENTTHREAD " + this.neighborPeer.getPeerId() + " GOT AN UNKNOWN THREADMESSAGE TYPE.\n");
+                    }
                 }
                 //otherwise, determine a piece to request for
                 else
@@ -81,7 +103,7 @@ System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " started
 Thread.sleep(5000);
             //close the socket (which should cause the ServerThread to close via SocketException or EOFException)
             this.neighborPeer.getSocket().close();
-System.out.print("ClientThread told ServerThread " + this.neighborPeer.getPeerId() + " to kill itself.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to kill itself.\n");
         }
 catch(InterruptedException e)
 {
@@ -93,7 +115,7 @@ catch(InterruptedException e)
             exception.printStackTrace();
             System.exit(1);
         }
-System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " ended.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
     }
 
     //helper methods
@@ -107,7 +129,7 @@ System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " ended.\
         this.neighborPeer.setBitfieldFromBytes(bitfieldMessage.getBitfield(), this.logger);
 
         determineInterest();
-System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " received bitfield from ServerThread and processed it.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Bitfield from ServerThread.\n");
     }
 
     private void processInterestStatusMessage(ThreadMessage interestStatusMessage)
@@ -119,12 +141,12 @@ System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " receive
         if(true == interestStatusMessage.getInterestStatus())
         {
             this.logger.logInterested(this.neighborPeer.getPeerId());
-System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " received Interested message from ServerThread and processed it.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Interested message from ServerThread.\n");
         }
         else
         {
             this.logger.logNotInterested(this.neighborPeer.getPeerId());
-System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " received NOT-Interested message from ServerThread and processed it.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed NOT-Interested message from ServerThread.\n");
         }
     }
 
@@ -148,7 +170,7 @@ System.out.print("ClientThread for " + this.neighborPeer.getPeerId() + " receive
 
         //send the 4-byte int peerId
         socketStream.writeInt(this.myPeer.getPeerId());
-System.out.print("ClientThread sent complete handshake to " + this.neighborPeer.getPeerId() + ".\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Handshake.\n");
     }
 
     private void sendBitfield() throws IOException
@@ -169,7 +191,7 @@ System.out.print("ClientThread sent complete handshake to " + this.neighborPeer.
             //send the bitfield
             socketStream.write(bitfield, 0, bitfield.length);
         }
-System.out.print("ClientThread sent complete bitfield message to peer " + this.neighborPeer.getPeerId() + ".\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Bitfield.\n");
     }
     
     private void determineInterest() throws IOException
@@ -202,6 +224,25 @@ System.out.print("ClientThread sent complete bitfield message to peer " + this.n
         }
     }
 
+    private void processChokeOrUnchoke(boolean choked) throws IOException
+    {
+        synchronized(this.clientThreadLock)
+        {
+            if(true == choked)
+            {
+                this.neighborPeer.setNeighborChoked(true);
+                this.logger.logChoked(this.neighborPeer.getPeerId());
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Choke message from ServerThread.\n");
+            }
+            else
+            {
+                this.neighborPeer.setNeighborChoked(false);
+                this.logger.logUnchoked(this.neighborPeer.getPeerId());
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed UN-Choke message from ServerThread.\n");
+            }
+        }
+    }
+
     private void sendInterested() throws IOException
     {
         //set message length (message type 1 byte + 0 payload)
@@ -211,7 +252,7 @@ System.out.print("ClientThread sent complete bitfield message to peer " + this.n
 
         //send the 1-byte message type (2 = interested)
         socketStream.writeByte(2);
-System.out.print("ClientThread sent interested message to " + this.neighborPeer.getPeerId() + ".\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Interested message.\n");
     }
 
     private void sendNotInterested() throws IOException
@@ -223,6 +264,27 @@ System.out.print("ClientThread sent interested message to " + this.neighborPeer.
 
         //send the 1-byte message type (3 = not interested)
         socketStream.writeByte(3);
-System.out.print("ClientThread sent NOT-interested message to " + this.neighborPeer.getPeerId() + ".\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent NOT-Interested.\n");
+    }
+
+    private void sendChokeOrUnchoke(boolean choked) throws IOException
+    {
+        //set message length (message type 1 byte + 0 payload)
+        int messageLength = 1;
+        //send the 4-byte int message length
+        socketStream.writeInt(messageLength);
+
+        if(true == choked)
+        {
+            //send the 1-byte message type (0 = choke)
+            socketStream.writeByte(0);
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Choke.\n");
+        }
+        else
+        {
+            //send the 1-byte message type (1 = unchoke)
+            socketStream.writeByte(1);
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent UN-Choke.\n");
+        }
     }
 }

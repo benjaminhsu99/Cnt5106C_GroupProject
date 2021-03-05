@@ -19,8 +19,10 @@ public class ThreadMessage
     {
         BITFIELD,
         INTERESTSTATUS,
-        CHOKE,
-        UNCHOKE;
+        SENDCHOKE,
+        SENDUNCHOKE,
+        RECEIVEDCHOKE,
+        RECEIVEDUNCHOKE;
     }
     ThreadMessageType threadMessageType;
 

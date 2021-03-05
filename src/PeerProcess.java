@@ -250,7 +250,7 @@ System.out.print("\n");
             }
 
             //evaluate if the optimistic choking interval time has passed
-            if(System.currentTimeMillis() > this.unchokingTimer + 1000 * ReadCommon.getOptimisticUnchokingInterval())
+            if(System.currentTimeMillis() > this.optimisticUnchokingTimer + 1000 * ReadCommon.getOptimisticUnchokingInterval())
             {
                 synchronized(this.peerProcessLock)
                 {
@@ -281,11 +281,16 @@ System.out.print("\n");
             //remove peers that have the complete file
             if(true == this.chokedNeighbors.get(index).getHasFile())
             {
-                //choke the neighbor
-                this.chokedNeighbors.get(index).setMyChoked(true);
-                //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
-                ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.CHOKE);
-                this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                //if the neighbor was not already choked, choke it and send a message to it
+                if(false == this.chokedNeighbors.get(index).getMyChoked())
+                {
+                    //choke the neighbor
+                    this.chokedNeighbors.get(index).setMyChoked(true);
+                    //tell the ClientThread to send a choking message to the neighbor
+                    ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                    this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                }
+
                 //remove the neighbor from the temporary chokedNeighbors list
                 this.chokedNeighbors.remove(index);
                 index--;
@@ -293,11 +298,16 @@ System.out.print("\n");
             //remove peers that are not interested
             else if(false == this.chokedNeighbors.get(index).getNeighborInterested())
             {
-                //choke the neighbor
-                this.chokedNeighbors.get(index).setMyChoked(true);
-                //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
-                ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.CHOKE);
-                this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                //if the neighbor was not already choked, choke it and send a message to it
+                if(false == this.chokedNeighbors.get(index).getMyChoked())
+                {
+                    //choke the neighbor
+                    this.chokedNeighbors.get(index).setMyChoked(true);
+                    //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
+                    ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                    this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                }
+
                 //remove the neighbor from the temporary chokedNeighbors list
                 this.chokedNeighbors.remove(index);
                 index--;
@@ -314,11 +324,16 @@ System.out.print("\n");
         {
             int randomIndex = random.nextInt(this.chokedNeighbors.size());
 
-            //unchoke the neighbor
-            this.chokedNeighbors.get(randomIndex).setMyChoked(false);
-            //tell the ClientThread to send an unchoking message (if currently choked) to the neighbor
-            ThreadMessage unchokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.UNCHOKE);
-            this.chokedNeighbors.get(randomIndex).getClientThread().addThreadMessage(unchokeMessage);
+            //if the neighbor was not already unchoked, unchoke it and send a message to it
+            if(true == this.chokedNeighbors.get(randomIndex).getMyChoked())
+            {
+                //unchoke the neighbor
+                this.chokedNeighbors.get(randomIndex).setMyChoked(false);
+                //tell the ClientThread to send an unchoking message (if currently choked) to the neighbor
+                ThreadMessage unchokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDUNCHOKE);
+                this.chokedNeighbors.get(randomIndex).getClientThread().addThreadMessage(unchokeMessage);
+            }
+
             //if the newly unchoked preferred neighbor was the optimistic neighbor, then mark that a new one needs to be found
             if(this.optimisticPeer == this.chokedNeighbors.get(randomIndex))
             {
@@ -344,11 +359,15 @@ System.out.print("\n");
         //choke the remaining neighbors
         for(int i = 0; i < this.chokedNeighbors.size(); i++)
         {
-            //choke the neighbor
-            this.chokedNeighbors.get(i).setMyChoked(true);
-            //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
-            ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.CHOKE);
-            this.chokedNeighbors.get(i).getClientThread().addThreadMessage(chokeMessage);
+            //if the neighbor was not already choked, choke it and send a message to it
+            if(false == this.chokedNeighbors.get(i).getMyChoked())
+            {
+                //choke the neighbor
+                this.chokedNeighbors.get(i).setMyChoked(true);
+                //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
+                ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                this.chokedNeighbors.get(i).getClientThread().addThreadMessage(chokeMessage);
+            }
         }
     }
 
@@ -362,11 +381,16 @@ System.out.print("\n");
             //remove peers that have the complete file
             if(true == this.chokedNeighbors.get(index).getHasFile())
             {
-                //choke the neighbor
-                this.chokedNeighbors.get(index).setMyChoked(true);
-                //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
-                ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.CHOKE);
-                this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                //if the neighbor was not already choked, choke it and send a message to it
+                if(false == this.chokedNeighbors.get(index).getMyChoked())
+                {
+                    //choke the neighbor
+                    this.chokedNeighbors.get(index).setMyChoked(true);
+                    //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
+                    ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                    this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                }
+
                 //remove the neighbor from the temporary chokedNeighbors list
                 this.chokedNeighbors.remove(index);
                 index--;
@@ -374,11 +398,16 @@ System.out.print("\n");
             //remove peers that are not interested
             else if(false == this.chokedNeighbors.get(index).getNeighborInterested())
             {
-                //choke the neighbor
-                this.chokedNeighbors.get(index).setMyChoked(true);
-                //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
-                ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.CHOKE);
-                this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                //if the neighbor was not already choked, choke it and send a message to it
+                if(false == this.chokedNeighbors.get(index).getMyChoked())
+                {
+                    //choke the neighbor
+                    this.chokedNeighbors.get(index).setMyChoked(true);
+                    //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
+                    ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                    this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                }
+
                 //remove the neighbor from the temporary chokedNeighbors list
                 this.chokedNeighbors.remove(index);
                 index--;
@@ -404,11 +433,16 @@ System.out.print("\n");
                 }
             }
 
-            //unchoke the neighbor
-            this.chokedNeighbors.get(indexOfHighestBytesCount).setMyChoked(false);
-            //tell the ClientThread to send an unchoking message (if currently choked) to the neighbor
-            ThreadMessage unchokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.UNCHOKE);
-            this.chokedNeighbors.get(indexOfHighestBytesCount).getClientThread().addThreadMessage(unchokeMessage);
+            //if the neighbor was not already unchoked, unchoke it and send a message to it
+            if(true == this.chokedNeighbors.get(indexOfHighestBytesCount).getMyChoked())
+            {
+                //unchoke the neighbor
+                this.chokedNeighbors.get(indexOfHighestBytesCount).setMyChoked(false);
+                //tell the ClientThread to send an unchoking message (if currently choked) to the neighbor
+                ThreadMessage unchokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDUNCHOKE);
+                this.chokedNeighbors.get(indexOfHighestBytesCount).getClientThread().addThreadMessage(unchokeMessage);
+            }
+
             //if the newly unchoked preferred neighbor was the optimistic neighbor, then mark that a new one needs to be found
             if(this.optimisticPeer == this.chokedNeighbors.get(indexOfHighestBytesCount))
             {
@@ -434,11 +468,15 @@ System.out.print("\n");
         //choke the remaining neighbors
         for(int i = 0; i < this.chokedNeighbors.size(); i++)
         {
-            //choke the neighbor
-            this.chokedNeighbors.get(i).setMyChoked(true);
-            //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
-            ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.CHOKE);
-            this.chokedNeighbors.get(i).getClientThread().addThreadMessage(chokeMessage);
+            //if the neighbor was not already choked, choke it and send a message to it
+            if(false == this.chokedNeighbors.get(index).getMyChoked())
+            {
+                //choke the neighbor
+                this.chokedNeighbors.get(i).setMyChoked(true);
+                //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
+                ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                this.chokedNeighbors.get(i).getClientThread().addThreadMessage(chokeMessage);
+            }
         }
     }
 
@@ -463,9 +501,13 @@ System.out.print("\n");
         //if the newly selected choked neighbor is not the same as the old one, choke the old one and have ClientThread send a choke message
         if(chokedNeighbors.get(randomIndex) != this.optimisticPeer && null != this.optimisticPeer)
         {
-            this.optimisticPeer.setMyChoked(true);
-            ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.CHOKE);
-            this.optimisticPeer.getClientThread().addThreadMessage(chokeMessage);
+            //if the neighbor was not already choked, choke it and send a message to it
+            if(false == this.optimisticPeer.getMyChoked())
+            {
+                this.optimisticPeer.setMyChoked(true);
+                ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                this.optimisticPeer.getClientThread().addThreadMessage(chokeMessage);
+            }
         }
 
         //set the new optimistic peer
@@ -474,9 +516,13 @@ System.out.print("\n");
         this.chokedNeighbors.remove(randomIndex);
 
         //unchoke the new optimistic and have ClientThread send an unchoke message
-        this.optimisticPeer.setMyChoked(false);
-        ThreadMessage unchokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.UNCHOKE);
-        this.optimisticPeer.getClientThread().addThreadMessage(unchokeMessage);
+        //if the neighbor was not already unchoked, unchoke it and send a message to it
+        if(true == this.optimisticPeer.getMyChoked())
+        {
+            this.optimisticPeer.setMyChoked(false);
+            ThreadMessage unchokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDUNCHOKE);
+            this.optimisticPeer.getClientThread().addThreadMessage(unchokeMessage);
+        }
     }
 
     private boolean allThreadsTerminated()

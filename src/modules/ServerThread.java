@@ -37,7 +37,7 @@ public class ServerThread extends Thread
         {
             //create a DataInputStream (using a InputStream in the constructor) that can receive data from the TCP socket
             this.socketStream = new DataInputStream(this.neighborPeer.getSocket().getInputStream());
-System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " started.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
 
             //wait until the sibling ClientThread has been created
             //the ClientThread will be the one that will modify the peer's PeerObject
@@ -65,8 +65,18 @@ System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " started
                 //read the 1-byte int that is the message type
                 int messageType = this.socketStream.readByte();
 
+                //0 = Choke
+                if(0 == messageType)
+                {
+                    receiveChokeOrUnchoke(true);
+                }
+                //1 = Unchoke
+                else if(1 == messageType)
+                {
+                    receiveChokeOrUnchoke(false);
+                }
                 //2 = Interested
-                if(2 == messageType)
+                else if(2 == messageType)
                 {
                     receiveInterested();
                 }
@@ -94,13 +104,13 @@ System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " started
         {
             //this means the socket was closed by a ClientThread process
             //so do nothing (which means the Thread will end naturally)
-System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " KILLED BY SOCKETEXCEPTION ended.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY SOCKETEXCEPTION.\n");
         }
         catch(EOFException exception)
         {
             //this means the socket was closed by a ClientThread process
             //so do nothing (which means the Thread will end naturally)
-System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " KILLED BY EOFEXCEPTION ended.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY EOFEXCEPTION.\n");
         }
         catch(IOException exception)
         {
@@ -108,7 +118,7 @@ System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " KILLED 
             exception.printStackTrace();
             System.exit(1);
         }
-System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " ended.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
     }
 
     //helper methods
@@ -154,7 +164,7 @@ System.out.print("ServerThread for " + this.neighborPeer.getPeerId() + " ended.\
             System.out.print("ERROR: ServerThread.java receieveHandshake() --- from peer " + this.neighborPeer.getPeerId() + " hand shake peerID is " + handshakePeerId + " which does not match.\n");
             System.exit(1);
         }
-System.out.print("Got completed handshake from " + handshakePeerId + ".\n");
+System.out.print("ServerThread " + handshakePeerId + " got Handshake.\n");
     }
 
     private void receiveBitfield(int payloadLength) throws SocketException, IOException
@@ -168,7 +178,7 @@ System.out.print("Got completed handshake from " + handshakePeerId + ".\n");
         //so as to avoid two concurrent threads modifying the bitfield portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(bitfieldAsBytes);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("Received bitfield from peer " + this.neighborPeer.getPeerId() + " and forwarded to ClientThread.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Bitfield and forwarded to ClientThread.\n");
     }
 
     private void receiveInterested() throws SocketException, IOException
@@ -177,7 +187,7 @@ System.out.print("Received bitfield from peer " + this.neighborPeer.getPeerId() 
         //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(true);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("Received Interested message from " + this.neighborPeer.getPeerId() + " and forwarded to ClientThread.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Interested message and forwarded to ClientThread.\n");
     }
 
     private void receiveNotInterested() throws SocketException, IOException
@@ -186,6 +196,24 @@ System.out.print("Received Interested message from " + this.neighborPeer.getPeer
         //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(false);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("Received NOT-Interested message from " + this.neighborPeer.getPeerId() + " and forwarded to ClientThread.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got NOT-Interested message and forwarded to ClientThread.\n");
+    }
+
+    private void receiveChokeOrUnchoke(boolean choked) throws SocketException, IOException
+    {
+        //pass a message to the ClientProcess for it to change PeerObject's neighborChoked status
+        //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
+        if(true == choked)
+        {
+            ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.RECEIVEDCHOKE);
+            this.clientThread.addThreadMessage(messageToClient);
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Choked message and forwarded to ClientThread.\n");
+        }
+        else
+        {
+            ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.RECEIVEDUNCHOKE);
+            this.clientThread.addThreadMessage(messageToClient);
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got UN-Choked message and forwarded to ClientThread.\n");
+        }
     }
 }
