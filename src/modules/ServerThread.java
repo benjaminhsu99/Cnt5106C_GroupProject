@@ -90,6 +90,11 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
                 {
                     receiveBitfield(messageLength - 1);
                 }
+                //6 = request
+                else if(6 == messageType)
+                {
+                    receiveRequest();
+                }
                 //otherwise, this was not a valid message type code
                 else
                 {
@@ -215,5 +220,17 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Choked 
             this.clientThread.addThreadMessage(messageToClient);
 System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got UN-Choked message and forwarded to ClientThread.\n");
         }
+    }
+
+    private void receiveRequest() throws SocketException, IOException
+    {
+        //read the requested piece index (4 byte int)
+        int pieceIndex = this.socketStream.readInt();
+
+        //pass a message to the ClientProcess for it to change PeerObject's interested status
+        //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
+        ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.REQUEST, pieceIndex);
+        this.clientThread.addThreadMessage(messageToClient);
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Request for Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
     }
 }

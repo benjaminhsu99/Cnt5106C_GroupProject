@@ -11,10 +11,8 @@ package src.modules;
 import java.io.*; //IOException, OutputStream, DataOutputStream
 import java.net.*; //SocketException
 import java.nio.charset.*; //StandardCharsets
-import java.util.*; //Queue
+import java.util.*; //Queue, Random
 import java.util.concurrent.*; //ArrayBlockingQueue
-
-import javax.lang.model.util.ElementScanner14;
 
 public class ClientThread extends Thread
 {
@@ -88,6 +86,10 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
                     {
                         processChokeOrUnchoke(false);
                     }
+                    else if(ThreadMessage.ThreadMessageType.REQUEST == topMessage.getThreadMessageType())
+                    {
+                        processRequest(topMessage);
+                    }
                     else
                     {
                         System.out.print("ERROR: CLIENTTHREAD " + this.neighborPeer.getPeerId() + " GOT AN UNKNOWN THREADMESSAGE TYPE.\n");
@@ -96,7 +98,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
                 //otherwise, determine a piece to request for
                 else
                 {
-
+                    determineRequest();
                 }
             }
 
@@ -130,6 +132,94 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
 
         determineInterest();
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Bitfield from ServerThread.\n");
+    }
+
+    private void determineInterest() throws IOException
+    {
+        synchronized(this.clientThreadLock)
+        {
+            boolean initialInterestState = this.neighborPeer.getMyInterested();
+            boolean neighborHasMissing = false;
+            //find if the neighbor has any missing piece
+            for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+            {
+                if(false == this.myPeer.hasPiece(i) && true == this.neighborPeer.hasPiece(i))
+                {
+                    neighborHasMissing = true;
+                    break;
+                }
+            }
+            
+            //check if the interest state should change and change interest state (and send message to peer) if so
+            if(false == initialInterestState && true == neighborHasMissing)
+            {
+                this.neighborPeer.setMyInterested(true);
+                sendInterested();
+            }
+            else if(true == initialInterestState && false == neighborHasMissing)
+            {
+                this.neighborPeer.setMyInterested(false);
+                sendNotInterested();
+            }
+        }
+    }
+
+    private void determineRequest() throws IOException
+    {
+        synchronized(this.clientThreadLock)
+        {
+            synchronized(this.peerProcessLock)
+            {
+                //can only request a piece if is unchoked by the neighbor and if is interested in the neighbor
+                if(false == this.neighborPeer.getNeighborChoked() && true == this.neighborPeer.getMyInterested())
+                {
+                    //find if this peer has already requested a piece from the neighbor
+                    //also identify pieces that can randomly select as the requested piece
+                    List<Integer> potentialRequestPieces = new ArrayList<Integer>();
+                    for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+                    {
+                        //if a piece is already currently requested from the neighbor, abort
+                        if(this.neighborPeer.getPeerId() == this.myPeer.getRequested(i))
+                        {
+                            return;
+                        }
+                        //otherwise, check if the piece has not been requested and is required
+                        if(-1 == this.myPeer.getRequested(i) && false == this.myPeer.hasPiece(i))
+                        {
+                            potentialRequestPieces.add(i);
+                        }
+                    }
+
+                    //if there are any potential request pieces, choose one randomly and send a request message
+                    if(false == potentialRequestPieces.isEmpty())
+                    {
+                        Random random = new Random();
+                        int randomIndex = random.nextInt(potentialRequestPieces.size());
+
+                        //mark the requested piece as requested
+                        this.myPeer.setRequested(potentialRequestPieces.get(randomIndex), this.neighborPeer.getPeerId());
+                        
+                        //send a request message
+                        sendRequest(potentialRequestPieces.get(randomIndex));
+                    }
+                }
+            }
+        }
+    }
+
+    private void sendRequest(int pieceIndex) throws IOException
+    {
+        //set message length (message type 1 byte + 4 byte int payload)
+        int messageLength = 1 + 4;
+        //send the 4-byte int message length
+        socketStream.writeInt(messageLength);
+
+        //send the 1-byte message type (6 = request)
+        socketStream.writeByte(6);
+
+        //send the 4-byte int piece that is requested
+        socketStream.writeInt(pieceIndex);
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Request Piece # " + pieceIndex + " message.\n");
     }
 
     private void processInterestStatusMessage(ThreadMessage interestStatusMessage)
@@ -193,36 +283,6 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Handsh
         }
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Bitfield.\n");
     }
-    
-    private void determineInterest() throws IOException
-    {
-        synchronized(this.clientThreadLock)
-        {
-            boolean initialInterestState = this.neighborPeer.getMyInterested();
-            boolean neighborHasMissing = false;
-            //find if the neighbor has any missing piece
-            for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
-            {
-                if(false == this.myPeer.hasPiece(i) && true == this.neighborPeer.hasPiece(i))
-                {
-                    neighborHasMissing = true;
-                    break;
-                }
-            }
-            
-            //check if the interest state should change and change interest state (and send message to peer) if so
-            if(false == initialInterestState && true == neighborHasMissing)
-            {
-                this.neighborPeer.setMyInterested(true);
-                sendInterested();
-            }
-            else if(true == initialInterestState && false == neighborHasMissing)
-            {
-                this.neighborPeer.setMyInterested(false);
-                sendNotInterested();
-            }
-        }
-    }
 
     private void processChokeOrUnchoke(boolean choked) throws IOException
     {
@@ -232,6 +292,9 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Bitfie
             {
                 this.neighborPeer.setNeighborChoked(true);
                 this.logger.logChoked(this.neighborPeer.getPeerId());
+
+                //also clear out any record of current piece requests to the neighbor that just choked this peer
+                this.myPeer.clearRequested(this.neighborPeer.getPeerId());
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Choke message from ServerThread.\n");
             }
             else
@@ -241,6 +304,21 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed C
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed UN-Choke message from ServerThread.\n");
             }
         }
+    }
+
+    private void processRequest(ThreadMessage requestMessage) throws IOException
+    {
+        //extract the piece request index
+        int requestedPieceIndex = requestMessage.getPieceIndex();
+
+        synchronized(this.clientThreadLock)
+        {
+            synchronized(this.peerProcessLock)
+            {
+                this.neighborPeer.setNeighborRequestedPiece(requestedPieceIndex);
+            }
+        }
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Request for Piece # " + requestedPieceIndex + " from ServerThread.\n");
     }
 
     private void sendInterested() throws IOException

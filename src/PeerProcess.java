@@ -73,7 +73,9 @@ public class PeerProcess extends Thread
     private LogWriter logger;
     private long unchokingTimer;
     private long optimisticUnchokingTimer;
+    private List<PeerObject> preferredPeers = new ArrayList<PeerObject>();
     private PeerObject optimisticPeer;
+    private PeerObject oldOptimisticPeerForLogger;
 
     //class constructor - which also sets up the TCP connections
     PeerProcess(int myPeerId)
@@ -273,6 +275,9 @@ System.out.print("\n");
 
     private void randomlyUnchokePreferred()
     {
+        //List of unchoked preferred neighbors to be used at the end for logging purposes
+        List<PeerObject> preferredNeighbors = new ArrayList<PeerObject>();
+
         this.chokedNeighbors = new ArrayList<PeerObject>(Arrays.asList(neighborPeers));
         //remove neighbor peers that already have the complete file or are not interested
         int index = 0;
@@ -286,6 +291,8 @@ System.out.print("\n");
                 {
                     //choke the neighbor
                     this.chokedNeighbors.get(index).setMyChoked(true);
+                    //clear any record of any piece that the neighbor requested
+                    this.chokedNeighbors.get(index).setNeighborRequestedPiece(-1);
                     //tell the ClientThread to send a choking message to the neighbor
                     ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
                     this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
@@ -303,6 +310,8 @@ System.out.print("\n");
                 {
                     //choke the neighbor
                     this.chokedNeighbors.get(index).setMyChoked(true);
+                    //clear any record of any piece that the neighbor requested
+                    this.chokedNeighbors.get(index).setNeighborRequestedPiece(-1);
                     //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
                     ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
                     this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
@@ -340,6 +349,10 @@ System.out.print("\n");
                 findNewOptimistic = true;
                 this.optimisticPeer = null;
             }
+
+            //add the new preferred neighbor to the list that will be logged at the end
+            preferredNeighbors.add(this.chokedNeighbors.get(randomIndex));
+
             //remove the neighbor from the temporary chokedNeighbors list
             this.chokedNeighbors.remove(randomIndex);
 
@@ -364,15 +377,27 @@ System.out.print("\n");
             {
                 //choke the neighbor
                 this.chokedNeighbors.get(i).setMyChoked(true);
+                //clear any record of any piece that the neighbor requested
+                this.chokedNeighbors.get(i).setNeighborRequestedPiece(-1);
                 //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
                 ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
                 this.chokedNeighbors.get(i).getClientThread().addThreadMessage(chokeMessage);
             }
         }
+
+        //log the new list of preferred neighbors, if it changed from before
+        if(false == (preferredNeighbors.containsAll(this.preferredPeers) && this.preferredPeers.containsAll(preferredNeighbors)))
+        {
+            this.preferredPeers = preferredNeighbors;
+            this.logger.logChangePreferredNeighbors(preferredNeighbors);
+        }
     }
 
     private void selectivelyUnchokePreferred()
     {
+        //List of unchoked preferred neighbors to be used at the end for logging purposes
+        List<PeerObject> preferredNeighbors = new ArrayList<PeerObject>();
+
         this.chokedNeighbors = new ArrayList<PeerObject>(Arrays.asList(neighborPeers));
         //remove neighbor peers that already have the complete file or are not interested
         int index = 0;
@@ -386,6 +411,8 @@ System.out.print("\n");
                 {
                     //choke the neighbor
                     this.chokedNeighbors.get(index).setMyChoked(true);
+                    //clear any record of any piece that the neighbor requested
+                    this.chokedNeighbors.get(index).setNeighborRequestedPiece(-1);
                     //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
                     ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
                     this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
@@ -403,6 +430,8 @@ System.out.print("\n");
                 {
                     //choke the neighbor
                     this.chokedNeighbors.get(index).setMyChoked(true);
+                    //clear any record of any piece that the neighbor requested
+                    this.chokedNeighbors.get(index).setNeighborRequestedPiece(-1);
                     //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
                     ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
                     this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
@@ -449,6 +478,10 @@ System.out.print("\n");
                 findNewOptimistic = true;
                 this.optimisticPeer = null;
             }
+
+            //add the new preferred neighbor to the list that will be logged at the end
+            preferredNeighbors.add(this.chokedNeighbors.get(indexOfHighestBytesCount));
+
             //remove the neighbor from the temporary chokedNeighbors list
             this.chokedNeighbors.remove(indexOfHighestBytesCount);
 
@@ -473,10 +506,19 @@ System.out.print("\n");
             {
                 //choke the neighbor
                 this.chokedNeighbors.get(i).setMyChoked(true);
+                //clear any record of any piece that the neighbor requested
+                this.chokedNeighbors.get(i).setNeighborRequestedPiece(-1);
                 //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
                 ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
                 this.chokedNeighbors.get(i).getClientThread().addThreadMessage(chokeMessage);
             }
+        }
+
+        //log the new list of preferred neighbors, if it changed from before
+        if(false == (preferredNeighbors.containsAll(this.preferredPeers) && this.preferredPeers.containsAll(preferredNeighbors)))
+        {
+            this.preferredPeers = preferredNeighbors;
+            this.logger.logChangePreferredNeighbors(preferredNeighbors);
         }
     }
 
@@ -491,6 +533,11 @@ System.out.print("\n");
         //if there are no potential optimistic peers, exit
         if(0 == this.chokedNeighbors.size())
         {
+            if(null != this.oldOptimisticPeerForLogger)
+            {
+                this.oldOptimisticPeerForLogger = null;
+                this.logger.logChangeOptimisticNeighbor(null);
+            }
             return;
         }
 
@@ -504,14 +551,25 @@ System.out.print("\n");
             //if the neighbor was not already choked, choke it and send a message to it
             if(false == this.optimisticPeer.getMyChoked())
             {
+                //choke the neighbor
                 this.optimisticPeer.setMyChoked(true);
+                //clear any record of any piece that the neighbor requested
+                this.optimisticPeer.setNeighborRequestedPiece(-1);
+                //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
                 ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
                 this.optimisticPeer.getClientThread().addThreadMessage(chokeMessage);
             }
         }
 
+        //if the chosen optimistic neighbor is a new one, log the event
+        if(this.optimisticPeer != this.chokedNeighbors.get(randomIndex))
+        {
+            //log the new optimistic neighbor
+            this.logger.logChangeOptimisticNeighbor(this.chokedNeighbors.get(randomIndex));
+        }
         //set the new optimistic peer
         this.optimisticPeer = this.chokedNeighbors.get(randomIndex);
+        this.oldOptimisticPeerForLogger = this.chokedNeighbors.get(randomIndex);
         //remove it from the optimisticPeer pool
         this.chokedNeighbors.remove(randomIndex);
 

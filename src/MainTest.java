@@ -73,7 +73,7 @@ public class MainTest
         System.out.print("Test log had a send-connection to fake peer 111 entry.\n");
         testLog.logReceiveConnection(11111);
         System.out.print("Test log had a receive-connection to fake peer 111 entry.\n");
-        testLog.logChangePreferredNeighbors(peerArrayForLater);
+        testLog.logChangePreferredNeighbors(Arrays.asList(peerArrayForLater));
         System.out.print("Test log had change of preferred message added.\n");
         testLog.logChangeOptimisticNeighbor(peerArrayForLater[0]);
         System.out.print("Test log had change of optimistic message added.\n");

@@ -14,6 +14,7 @@ import java.nio.charset.*; //StandardCharsets
 import java.time.*; //LocalDateTime
 import java.time.format.*; //DateTimeFormatter
 import java.lang.*; //Integer
+import java.util.*; //List, ArrayList
 
 public class LogWriter
 {
@@ -102,22 +103,30 @@ public class LogWriter
         }
     }
 
-    public void logChangePreferredNeighbors(PeerObject[] preferredNeighbors)
+    public void logChangePreferredNeighbors(List<PeerObject> preferredNeighbors)
     {
         //write the log entry
         try
         {
-            this.theLog.append("[" + getTime() + "]: Peer " + this.myPeerId + " has the preferred neighbors ");
-            for(int i = 0; i < preferredNeighbors.length; i++)
+            if(true == preferredNeighbors.isEmpty())
             {
-                this.theLog.append(Integer.toString(preferredNeighbors[i].getPeerId()));
-                if(preferredNeighbors.length - 1 != i)
+                this.theLog.append("[" + getTime() + "]: Peer " + this.myPeerId + " has the preferred neighbors [NONE].\n");
+                this.theLog.flush();
+            }
+            else
+            {
+                this.theLog.append("[" + getTime() + "]: Peer " + this.myPeerId + " has the preferred neighbors ");
+                for(int i = 0; i < preferredNeighbors.size(); i++)
                 {
-                    this.theLog.append(", ");
-                }
-            } 
-            this.theLog.append(".\n");
-            this.theLog.flush();
+                    this.theLog.append(Integer.toString(preferredNeighbors.get(i).getPeerId()));
+                    if(preferredNeighbors.size() - 1 != i)
+                    {
+                        this.theLog.append(", ");
+                    }
+                } 
+                this.theLog.append(".\n");
+                this.theLog.flush();
+            }
         }
         catch(IOException exception)
         {
@@ -132,7 +141,14 @@ public class LogWriter
         //write the log entry
         try
         {
-            this.theLog.append("[" + getTime() + "]: Peer " + this.myPeerId + " has the optimistically unchoked neighbor " + Integer.toString(optimisticNeighbor.getPeerId()) + ".\n");
+            if(null != optimisticNeighbor)
+            {
+                this.theLog.append("[" + getTime() + "]: Peer " + this.myPeerId + " has the optimistically unchoked neighbor " + Integer.toString(optimisticNeighbor.getPeerId()) + ".\n");
+            }
+            else
+            {
+                this.theLog.append("[" + getTime() + "]: Peer " + this.myPeerId + " has the optimistically unchoked neighbor [NONE].\n");
+            }
             this.theLog.flush();
         }
         catch(IOException exception)

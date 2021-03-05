@@ -22,12 +22,14 @@ public class ThreadMessage
         SENDCHOKE,
         SENDUNCHOKE,
         RECEIVEDCHOKE,
-        RECEIVEDUNCHOKE;
+        RECEIVEDUNCHOKE,
+        REQUEST;
     }
     ThreadMessageType threadMessageType;
 
     private byte[] bitfield;
     private boolean interestStatus;
+    private int pieceIndex;
 
     //constructors
     public ThreadMessage(byte[] bitfield)
@@ -39,6 +41,11 @@ public class ThreadMessage
     {
         this.threadMessageType = ThreadMessageType.INTERESTSTATUS;
         this.interestStatus = interestStatus;
+    }
+    public ThreadMessage(ThreadMessageType threadMessageType, int pieceIndex)
+    {
+        this.threadMessageType = threadMessageType;
+        this.pieceIndex = pieceIndex;
     }
     public ThreadMessage(ThreadMessageType threadMessageType)
     {
@@ -57,5 +64,9 @@ public class ThreadMessage
     public boolean getInterestStatus()
     {
         return this.interestStatus;
+    }
+    public int getPieceIndex()
+    {
+        return this.pieceIndex;
     }
 }

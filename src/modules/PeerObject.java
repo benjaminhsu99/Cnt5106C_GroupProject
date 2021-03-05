@@ -23,6 +23,7 @@ public class PeerObject
     private volatile int bytesDownloadedFrom;
     private volatile BitSet bitfield;
     private int[] requested;
+    private int neighborRequestedPiece;
     private volatile boolean neighborInterested;
     private volatile boolean myInterested;
     private volatile boolean neighborChoked;
@@ -64,6 +65,9 @@ public class PeerObject
         {
             requested[i] = -1;
         }
+
+        //set the default neighbor's requested piece index to -1
+        this.neighborRequestedPiece = -1;
 
         //set default value of interested to false
         this.neighborInterested = false;
@@ -198,7 +202,7 @@ public class PeerObject
             }
         }
     }
-    public int isCurrentlyRequested(int pieceIndex)
+    public int getRequested(int pieceIndex)
     {
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
@@ -210,7 +214,7 @@ public class PeerObject
         //else return whether the piece is currently already requested
         return this.requested[pieceIndex];
     }
-    public void setAsRequested(int pieceIndex, int peerIdRequestedFrom)
+    public void setRequested(int pieceIndex, int peerIdRequestedFrom)
     {
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
@@ -232,6 +236,14 @@ public class PeerObject
                 this.requested[i] = -1;
             }
         }
+    }
+    public int getNeighborRequestedPiece()
+    {
+        return this.neighborRequestedPiece;
+    }
+    public void setNeighborRequestedPiece(int requestedPieceIndex)
+    {
+        this.neighborRequestedPiece = requestedPieceIndex;
     }
     public boolean getNeighborInterested()
     {
