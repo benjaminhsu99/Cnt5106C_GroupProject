@@ -23,8 +23,8 @@ public class PeerObject
     private Socket socket;
     private volatile int bytesDownloadedFrom;
     private volatile BitSet bitfield;
-    private int[] requested;
-    private int neighborRequestedPiece;
+    private volatile int[] requested;
+    private volatile int neighborRequestedPiece;
     private volatile boolean neighborInterested;
     private volatile boolean myInterested;
     private volatile boolean neighborChoked;
@@ -52,14 +52,14 @@ public class PeerObject
             for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
             {
                 //Bitset's set() method changes the indicated index to the second parameter's value
-                bitfield.set(i, true);
+                this.bitfield.set(i, true);
             }
         }
         //else set the initial bitfield entries to false
         else
         {
             //BitSet's clear method sets all bits to false
-            bitfield.clear();
+            this.bitfield.clear();
         }
 
         //set the default values of requested pieces from peerIds to "no peer" (represented by -1)
@@ -155,7 +155,7 @@ public class PeerObject
     {
         //BitSet's valueOf() method converts a little-endian byte array to a BitField
         this.bitfield = BitSet.valueOf(bitfieldAsBytes);
-
+        
         //check if the receieve bitfield indicates that the peer has the full file
         //check every bit in the bitfield
         boolean hasAllPieces = true;

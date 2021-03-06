@@ -1,0 +1,12 @@
+[03/05/2021 22:42:07]: Peer 1 has downloaded the complete file.
+[03/05/2021 22:42:09]: Peer 1 is connected from Peer 22.
+[03/05/2021 22:42:10]: Peer 1 is connected from Peer 333.
+[03/05/2021 22:42:10]: Peer 1 received the 'interested' message from 333.
+[03/05/2021 22:42:10]: Peer 1 received the 'interested' message from 22.
+[03/05/2021 22:42:15]: Peer 1 has the preferred neighbors 22.
+[03/05/2021 22:42:15]: Peer 1 received the 'not interested' message from 22.
+[03/05/2021 22:42:20]: Peer 1 has the optimistically unchoked neighbor 333.
+[03/05/2021 22:42:20]: Peer 1 has the optimistically unchoked neighbor [NONE].
+[03/05/2021 22:42:20]: Peer 1 has the preferred neighbors 333.
+[03/05/2021 22:42:20]: Peer 1 received the 'not interested' message from 333.
+[03/05/2021 22:42:25]: Peer 1 has the preferred neighbors [NONE].

@@ -54,7 +54,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
             sendBitfield();
 
             //continously send messages to the TCP socket until both peers of the socket have the file
-            while(false == this.myPeer.getHasFile() || false == this.neighborPeer.getHasFile())
+            while(false == this.myPeer.getHasFile() || false == this.neighborPeer.getHasFile() || false == this.neighborPeer.getMyChoked() || false == this.neighborPeer.getNeighborChoked())
             {
                 //process any incoming task messages from the sibling ServerThread
                 if(false == this.messagesFromServer.isEmpty())
@@ -184,6 +184,12 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed B
             boolean initialInterestState = this.neighborPeer.getMyInterested();
             boolean neighborHasMissing = false;
             //find if the neighbor has any missing piece
+System.out.print("BITFIELD OF " + this.neighborPeer.getPeerId() + " : ");
+for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+{
+System.out.print("#" + i + " = " + this.neighborPeer.hasPiece(i) + ", ");
+}
+System.out.print("\n");
             for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
             {
                 if(false == this.myPeer.hasPiece(i) && true == this.neighborPeer.hasPiece(i))
@@ -308,7 +314,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed U
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Request for Piece # " + requestedPieceIndex + " from ServerThread.\n");
 
         //check if the peer is unchoked, and send the piece if so
-        //it is technically possible for the PeerProcess to have changed unchoking peers by this point
+        //there is a rare chance for the PeerProcess to have changed unchoking peers by this point
         synchronized(this.clientThreadLock)
         {
             synchronized(this.peerProcessLock)
@@ -319,7 +325,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed R
                 }
 else
 {
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " didn't qualify for sendPiece(), probably due to unchoke change --- IT ACTUALLY HAPPENED!!!\n");
+System.out.print("\n\n\n\n\n\n\nClientThread " + this.neighborPeer.getPeerId() + " didn't qualify for sendPiece(), probably due to unchoke change --- IT ACTUALLY HAPPENED!!!\n\n\n\n\n\n\n");
 }
                 //clear the "neighborRequestedPiece" field
                 this.neighborPeer.setNeighborRequestedPiece(-1);
@@ -364,33 +370,35 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " didn't qual
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Piece # " + pieceIndex + ".\n");
     }
 
-    private void processPiece(ThreadMessage bitfieldMessage) throws IOException
+    private void processPiece(ThreadMessage pieceMessage) throws IOException
     {
         synchronized(this.clientThreadLock)
         {
             synchronized(this.peerProcessLock)
             {
-                int pieceIndex = bitfieldMessage.getPieceIndex();
-                byte[] pieceBytes = bitfieldMessage.getBytesArray();
+                int pieceIndex = pieceMessage.getPieceIndex();
+                byte[] pieceBytes = pieceMessage.getBytesArray();
 
                 //if the peer doesn't already have the piece, write it in and set the bitfield as having the piece
                 //write the piece
                 if(false == this.myPeer.hasPiece(pieceIndex))
                 {
+                    //write the piece to the file
                     this.myPeer.getFileWriter().writePiece(pieceIndex, pieceBytes);
-                    this.myPeer.setBitfieldPieceAsTrue(pieceIndex, this.logger);
-
                     //log the event
                     this.logger.logDownload(this.neighborPeer.getPeerId(), pieceIndex, this.myPeer.countNumberOfPieces());
+                    //set the bitfield segment as true
+                    this.myPeer.setBitfieldPieceAsTrue(pieceIndex, this.logger);
+                    //add the number of bytes to the bytesDownloadedFrom count
+                    this.neighborPeer.addBytesDownloadedFrom(pieceBytes.length);
 
                     //clear any record of currently requested pieces
                     this.myPeer.clearRequested(this.neighborPeer.getPeerId());
                     determineInterest();
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Piece # " + pieceIndex + " from ServerThread.\n");
                 }
             }
         }
-        this.neighborPeer.setBitfieldFromBytes(bitfieldMessage.getBytesArray(), this.logger);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Bitfield from ServerThread.\n");
     }
 
     private void determineRequest() throws IOException

@@ -212,10 +212,14 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
                 unchokeOptimistic();
                 this.optimisticUnchokingTimer = System.currentTimeMillis();
             }
-System.out.print("INITIAL RANDOM: Unchoked Status :");
+System.out.print("INITIAL RANDOM: Unchoked Status: ");
 for(int i = 0; i < this.neighborPeers.length; i++)
 {
-System.out.print("Peer " + this.neighborPeers[i].getPeerId() + " choked?->" + this.neighborPeers[i].getMyChoked() + " --- ");
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
+if(this.neighborPeers[i] == this.optimisticPeer)
+{
+System.out.print("<===OPTIMISTIC ");
+}
 }
 System.out.print("\n");
         }
@@ -239,13 +243,13 @@ System.out.print("\n");
                         this.unchokingTimer = System.currentTimeMillis();
                     }
                 }
-System.out.print("PREFERRED TIMED OUT: Unchoked Status :");
+System.out.print("PREFERRED TIMED OUT: Unchoked Status: ");
 for(int i = 0; i < this.neighborPeers.length; i++)
 {
-System.out.print("Peer " + this.neighborPeers[i].getPeerId() + " choked?->" + this.neighborPeers[i].getMyChoked() + " --- ");
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
 if(this.neighborPeers[i] == this.optimisticPeer)
 {
-System.out.print("<===OPTIMISTIC   ");
+System.out.print("<===OPTIMISTIC ");
 }
 }
 System.out.print("\n");
@@ -259,13 +263,13 @@ System.out.print("\n");
                     unchokeOptimistic();
                     this.optimisticUnchokingTimer = System.currentTimeMillis();
                 }
-System.out.print("OPTIMISTIC TIMED OUT: Unchoked Status :");
+System.out.print("OPTIMISTIC TIMED OUT: Unchoked Status: ");
 for(int i = 0; i < this.neighborPeers.length; i++)
 {
-System.out.print("Peer " + this.neighborPeers[i].getPeerId() + " choked?->" + this.neighborPeers[i].getMyChoked() + " --- ");
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
 if(this.neighborPeers[i] == this.optimisticPeer)
 {
-System.out.print("<===OPTIMISTIC   ");
+System.out.print("<===OPTIMISTIC ");
 }
 }
 System.out.print("\n");
@@ -453,13 +457,35 @@ System.out.print("\n");
             //iterate through the neighbors and find the highest bytes contributor
             int highestBytesCount = this.chokedNeighbors.get(0).getBytesDownloadedFrom();
             int indexOfHighestBytesCount = 0;
+            List<Integer> tieBreakerList = new ArrayList<Integer>();
+            tieBreakerList.add(0);
+System.out.print("CURRENT BYTES COUNTS ----");
+for(int i = 0; i < this.chokedNeighbors.size(); i++)
+{
+System.out.print(this.chokedNeighbors.get(i).getPeerId() + "=" + this.chokedNeighbors.get(i).getBytesDownloadedFrom() + "   ");
+}
+System.out.print("\n");
             for(int i = 1; i < this.chokedNeighbors.size(); i++)
             {
                 if(this.chokedNeighbors.get(i).getBytesDownloadedFrom() > highestBytesCount)
                 {
                     highestBytesCount = this.chokedNeighbors.get(i).getBytesDownloadedFrom();
                     indexOfHighestBytesCount = i;
+                    tieBreakerList.clear();
+                    tieBreakerList.add(i);
                 }
+                else if(this.chokedNeighbors.get(i).getBytesDownloadedFrom() == highestBytesCount)
+                {
+                    tieBreakerList.add(i);
+                }
+            }
+
+            //if there were multiple peers with the highest bytes count, randomize which one is chosen
+            if(1 < tieBreakerList.size())
+            {
+                Random random = new Random();
+                int randomIndex = random.nextInt(tieBreakerList.size());
+                indexOfHighestBytesCount = tieBreakerList.get(randomIndex);
             }
 
             //if the neighbor was not already unchoked, unchoke it and send a message to it
@@ -514,6 +540,12 @@ System.out.print("\n");
             }
         }
 
+        //reset the bytesDownloadedFrom counts for all peers
+        for(int i = 0; i < neighborPeers.length; i++)
+        {
+            neighborPeers[i].resetBytesDownloadedFrom();
+        }
+
         //log the new list of preferred neighbors, if it changed from before
         if(false == (preferredNeighbors.containsAll(this.preferredPeers) && this.preferredPeers.containsAll(preferredNeighbors)))
         {
@@ -528,6 +560,52 @@ System.out.print("\n");
         if(null != this.optimisticPeer)
         {
             this.chokedNeighbors.add(this.optimisticPeer);
+        }
+
+        //remove neighbor peers that already have the complete file or are not interested
+        int index = 0;
+        while(this.chokedNeighbors.size() != index)
+        {
+            //remove peers that have the complete file
+            if(true == this.chokedNeighbors.get(index).getHasFile())
+            {
+                //if the neighbor was not already choked, choke it and send a message to it
+                if(false == this.chokedNeighbors.get(index).getMyChoked())
+                {
+                    //choke the neighbor
+                    this.chokedNeighbors.get(index).setMyChoked(true);
+                    //clear any record of any piece that the neighbor requested
+                    this.chokedNeighbors.get(index).setNeighborRequestedPiece(-1);
+                    //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
+                    ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                    this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                }
+
+                //remove the neighbor from the temporary chokedNeighbors list
+                this.chokedNeighbors.remove(index);
+                index--;
+            }
+            //remove peers that are not interested
+            else if(false == this.chokedNeighbors.get(index).getNeighborInterested())
+            {
+                //if the neighbor was not already choked, choke it and send a message to it
+                if(false == this.chokedNeighbors.get(index).getMyChoked())
+                {
+                    //choke the neighbor
+                    this.chokedNeighbors.get(index).setMyChoked(true);
+                    //clear any record of any piece that the neighbor requested
+                    this.chokedNeighbors.get(index).setNeighborRequestedPiece(-1);
+                    //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
+                    ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);
+                    this.chokedNeighbors.get(index).getClientThread().addThreadMessage(chokeMessage);
+                }
+
+                //remove the neighbor from the temporary chokedNeighbors list
+                this.chokedNeighbors.remove(index);
+                index--;
+            }
+
+            index++;
         }
 
         //if there are no potential optimistic peers, exit
