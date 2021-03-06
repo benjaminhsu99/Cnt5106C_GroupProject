@@ -19,6 +19,7 @@ public class PeerObject
     private final String hostName;
     private final int portNumber;
     private volatile boolean hasFile;
+    private FileWriter fileWriter;
     private Socket socket;
     private volatile int bytesDownloadedFrom;
     private volatile BitSet bitfield;
@@ -37,6 +38,8 @@ public class PeerObject
         this.hostName = hostName;
         this.portNumber = portNumber;
         this.hasFile = hasFile;
+
+        this.fileWriter = new FileWriter(this.peerId);
 
         this.socket = null;
         this.bytesDownloadedFrom = 0;
@@ -95,6 +98,10 @@ public class PeerObject
     {
         return this.hasFile;
     }
+    public FileWriter getFileWriter()
+    {
+        return this.fileWriter;
+    }
     public Socket getSocket()
     {
         return this.socket;
@@ -132,7 +139,7 @@ public class PeerObject
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
         {
-            System.out.print("ERROR: FileWriter.java hasPiece() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.out.print("ERROR: PeerObject.java hasPiece --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
             System.exit(1);
         }
 
@@ -172,13 +179,19 @@ public class PeerObject
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
         {
-            System.out.print("ERROR: FileWriter.java setBitFieldPieceAsTrue() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.out.print("ERROR: PeerObject.java setBitFieldPieceAsTrue() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
             System.exit(1);
         }
         
         //else set the bitfield to true, for the specified piece
         //Bitset's set() method changes the indicated index to the second parameter's value
         this.bitfield.set(pieceIndex, true);
+System.out.print("BITFIELD OF " + this.peerId + " : ");
+for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+{
+System.out.print("#" + i + " = " + this.bitfield.get(i) + ", ");
+}
+System.out.print("\n");
 
         //check if this causes the hasFile status to change from false to true
         if(false == this.hasFile)
@@ -202,12 +215,17 @@ public class PeerObject
             }
         }
     }
+    public int countNumberOfPieces()
+    {
+        //BitSet's cardinality() returns the number of true bits
+        return this.bitfield.cardinality();
+    }
     public int getRequested(int pieceIndex)
     {
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
         {
-            System.out.print("ERROR: FileWriter.java isCurrentlyRequested() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.out.print("ERROR: PeerObject.java getRequested() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
             System.exit(1);
         }
 
@@ -219,7 +237,7 @@ public class PeerObject
         //error-check: check if the piece index is within bounds
         if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
         {
-            System.out.print("ERROR: FileWriter.java setAsRequested() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.out.print("ERROR: PeerObject.java setRequested() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
             System.exit(1);
         }
         

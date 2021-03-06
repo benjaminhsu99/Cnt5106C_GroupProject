@@ -23,11 +23,12 @@ public class ThreadMessage
         SENDUNCHOKE,
         RECEIVEDCHOKE,
         RECEIVEDUNCHOKE,
-        REQUEST;
+        REQUEST,
+        PIECE;
     }
     ThreadMessageType threadMessageType;
 
-    private byte[] bitfield;
+    private byte[] bytesArray;
     private boolean interestStatus;
     private int pieceIndex;
 
@@ -35,12 +36,18 @@ public class ThreadMessage
     public ThreadMessage(byte[] bitfield)
     {
         this.threadMessageType = ThreadMessageType.BITFIELD;
-        this.bitfield = bitfield;
+        this.bytesArray = bitfield;
     }
     public ThreadMessage(boolean interestStatus)
     {
         this.threadMessageType = ThreadMessageType.INTERESTSTATUS;
         this.interestStatus = interestStatus;
+    }
+    public ThreadMessage(int pieceIndex, byte[] pieceBytes)
+    {
+        this.threadMessageType = ThreadMessageType.PIECE;
+        this.pieceIndex = pieceIndex;
+        this.bytesArray = pieceBytes;
     }
     public ThreadMessage(ThreadMessageType threadMessageType, int pieceIndex)
     {
@@ -57,9 +64,9 @@ public class ThreadMessage
     {
         return this.threadMessageType;
     }
-    public byte[] getBitfield()
+    public byte[] getBytesArray()
     {
-        return this.bitfield;
+        return this.bytesArray;
     }
     public boolean getInterestStatus()
     {

@@ -95,6 +95,11 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
                 {
                     receiveRequest();
                 }
+                //7 = piece
+                else if(7 == messageType)
+                {
+                    receivePiece(messageLength - 1 - 4);
+                }
                 //otherwise, this was not a valid message type code
                 else
                 {
@@ -232,5 +237,22 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got UN-Chok
         ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.REQUEST, pieceIndex);
         this.clientThread.addThreadMessage(messageToClient);
 System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Request for Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
+    }
+
+    private void receivePiece(int payloadLength) throws SocketException, IOException
+    {
+        //read in the piece index
+        int pieceIndex = this.socketStream.readInt();
+
+        //byte array to hold the bitfield payload as bytes
+        byte[] pieceBytes = new byte[payloadLength];
+        //read in the bitfield payload
+        this.socketStream.readFully(pieceBytes);
+
+        //pass the piece to the ClientProcess for it to enter into the PeerObject
+        //so as to avoid two concurrent threads modifying the bitfield portion fo the PeerObject
+        ThreadMessage messageToClient = new ThreadMessage(pieceIndex, pieceBytes);
+        this.clientThread.addThreadMessage(messageToClient);
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
     }
 }
