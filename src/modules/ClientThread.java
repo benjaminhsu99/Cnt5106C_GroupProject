@@ -131,10 +131,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " QUEUE IS FU
             }
 
             //close the socket (which should cause the ServerThread to close via SocketException or EOFException)
-            synchronized(this.peerProcessLock)
-            {
-                this.neighborPeer.getSocket().close();
-            }
+            this.neighborPeer.getSocket().close();
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to kill itself.\n");
         }
         catch(InterruptedException exception)
@@ -455,9 +452,10 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Piece 
 
                     //tell the main PeerProcess to tell all the ClientThreads to notify their peer partners with a "have" message
                     ThreadMessage messageToPeerProcess = new ThreadMessage(ThreadMessage.ThreadMessageType.PEERPROCESSHAVE, pieceIndex);
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " is trying... to tell the PeerProcess to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");
 if(0 == this.messagesToPeerProcess.remainingCapacity())
 {
-System.out.print("PeerProcess" + this.neighborPeer.getPeerId() + " QUEUE IS FULL!!!!!.\n");
+System.out.print("PeerProcess/ClientThread " + this.neighborPeer.getPeerId() + " QUEUE IS FULL!!!!!.\n");
 }
                     this.messagesToPeerProcess.put(messageToPeerProcess);
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told the PeerProcess to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");

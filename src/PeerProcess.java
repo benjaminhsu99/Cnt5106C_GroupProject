@@ -223,14 +223,8 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
         for(int i = 0; i < this.clientThreads.length; i++)
         {
             ThreadMessage sendHaveMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDHAVE, havePieceIndex);
-            //check if the thread is still alive in the first place
-            synchronized(this.peerProcessLock)
-            {
-                if(Thread.State.TERMINATED != this.clientThreads[i].getState())
-                {
-                    this.clientThreads[i].addThreadMessage(sendHaveMessage);
-                }
-            }
+System.out.print("PeerProcess is trying to tell... ClientThread " + this.neighborPeers[i].getPeerId() + " to send a Have Piece # " + havePieceIndex + " message.\n");
+            clientThreads[i].addThreadMessage(sendHaveMessage);
 System.out.print("PeerProcess told ClientThread " + this.neighborPeers[i].getPeerId() + " to send a Have Piece # " + havePieceIndex + " message.\n");
         }
     }
