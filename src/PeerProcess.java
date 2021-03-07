@@ -271,7 +271,7 @@ System.out.print("\n");
                         this.unchokingTimer = System.currentTimeMillis();
                     }
                 }
-System.out.print("PREFERRED TIMED OUT: Choked? Status: ");
+System.out.print("(PREFERRED TIMED OUT): Choked? Status: ");
 for(int i = 0; i < this.neighborPeers.length; i++)
 {
 System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
@@ -291,7 +291,7 @@ System.out.print("\n");
                     unchokeOptimistic();
                     this.optimisticUnchokingTimer = System.currentTimeMillis();
                 }
-System.out.print("OPTIMISTIC TIMED OUT: Choked? Status: ");
+System.out.print("(OPTIMISTIC TIMED OUT): Choked? Status: ");
 for(int i = 0; i < this.neighborPeers.length; i++)
 {
 System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
@@ -487,7 +487,7 @@ System.out.print("\n");
             int indexOfHighestBytesCount = 0;
             List<Integer> tieBreakerList = new ArrayList<Integer>();
             tieBreakerList.add(0);
-System.out.print("CURRENT BYTES COUNTS ----");
+System.out.print("(SELECTIVE UNCHOKE-CURRENT BYTES COUNTS) ---");
 for(int i = 0; i < this.chokedNeighbors.size(); i++)
 {
 System.out.print(this.chokedNeighbors.get(i).getPeerId() + "=" + this.chokedNeighbors.get(i).getBytesDownloadedFrom() + "   ");
@@ -556,7 +556,7 @@ System.out.print("\n");
         for(int i = 0; i < this.chokedNeighbors.size(); i++)
         {
             //if the neighbor was not already choked, choke it and send a message to it
-            if(false == this.chokedNeighbors.get(index).getMyChoked())
+            if(false == this.chokedNeighbors.get(i).getMyChoked())
             {
                 //tell the ClientThread to send a choking message (if currently unchoked) to the neighbor
                 ThreadMessage chokeMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDCHOKE);

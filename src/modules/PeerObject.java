@@ -25,6 +25,7 @@ public class PeerObject
     private volatile BitSet bitfield;
     private volatile BitSet piecesNotified;
     private volatile boolean allPiecesNotified;
+    private volatile boolean neighborWasToldChoked;
     private volatile int[] requested;
     private volatile int neighborRequestedPiece;
     private volatile boolean neighborInterested;
@@ -68,6 +69,9 @@ public class PeerObject
         //also set the piecesNotified initial state to false
         this.piecesNotified.clear();
         this.allPiecesNotified = false;
+
+        //and set default value of "neighborWasToldChoked" to true (initial default state of neighbor is choked)
+        this.neighborWasToldChoked = true;
 
         //set the default values of requested pieces from peerIds to "no peer" (represented by -1)
         this.requested = new int[ReadCommon.getNumberOfPieces()];
@@ -193,12 +197,12 @@ public class PeerObject
         //else set the bitfield to true, for the specified piece
         //Bitset's set() method changes the indicated index to the second parameter's value
         this.bitfield.set(pieceIndex, true);
-System.out.print("(SETBITFIELD)---BITFIELD OF " + this.peerId + " : ");
-for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
-{
-System.out.print("#" + i + " = " + this.bitfield.get(i) + ", ");
-}
-System.out.print("\n");
+// System.out.print("(SETBITFIELD)---BITFIELD OF " + this.peerId + " : ");
+// for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+// {
+// System.out.print("#" + i + " = " + this.bitfield.get(i) + ", ");
+// }
+// System.out.print("\n");
 
         //check if this causes the hasFile status to change from false to true
         if(false == this.hasFile)
@@ -250,6 +254,14 @@ System.out.print("ClientThread " + this.peerId + " notified of having " + this.p
     public boolean getAllPiecesNotified()
     {
         return this.allPiecesNotified;
+    }
+    public boolean getNeighborWasToldChoked()
+    {
+        return this.neighborWasToldChoked;
+    }
+    public void setNeighborWasToldChoked(boolean chokedMessageStatus)
+    {
+        this.neighborWasToldChoked = chokedMessageStatus;
     }
     public int getRequested(int pieceIndex)
     {

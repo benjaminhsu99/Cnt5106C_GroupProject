@@ -56,7 +56,14 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
             sendBitfield();
 
             //continously send messages to the TCP socket until both peers of the socket have the file
-            while(false == this.messagesFromServer.isEmpty() || false == this.myPeer.getHasFile() || false == this.neighborPeer.getHasFile() || false == this.neighborPeer.getMyChoked() || false == this.neighborPeer.getNeighborChoked() || false == this.neighborPeer.getAllPiecesNotified())
+            while(
+            false == this.messagesFromServer.isEmpty() 
+            || false == this.myPeer.getHasFile() 
+            || false == this.neighborPeer.getHasFile() 
+            || false == this.neighborPeer.getMyChoked() 
+            || false == this.neighborPeer.getNeighborChoked() 
+            || false == this.neighborPeer.getAllPiecesNotified()
+            || false == this.neighborPeer.getNeighborWasToldChoked())
             {
                 //process any incoming task messages from the sibling ServerThread
                 if(false == this.messagesFromServer.isEmpty())
@@ -122,9 +129,9 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told Server
         }
         catch(IOException exception)
         {
-            System.out.print("ERROR: ClientThread.java --- some IO error in the loop that sends to the TCP connection.\n");
+            System.out.print("\n\n\n\n\nPOSSIBLE ERROR (OR MAY JUST BE HARMLESS EXCEPTION): ClientThread " + this.neighborPeer.getPeerId() + " --- some IO error in the loop that sends to the TCP connection.\n");
             exception.printStackTrace();
-            System.exit(1);
+            System.out.print("\n\n\n\n\n");
         }
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
     }
@@ -203,12 +210,12 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed B
             boolean initialInterestState = this.neighborPeer.getMyInterested();
             boolean neighborHasMissing = false;
             //find if the neighbor has any missing piece
-System.out.print("(DETERMINEINTEREST) BITFIELD OF " + this.neighborPeer.getPeerId() + " : ");
-for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
-{
-System.out.print("#" + i + " = " + this.neighborPeer.hasPiece(i) + ", ");
-}
-System.out.print("\n");
+// System.out.print("(DETERMINEINTEREST) BITFIELD OF " + this.neighborPeer.getPeerId() + " : ");
+// for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
+// {
+// System.out.print("#" + i + " = " + this.neighborPeer.hasPiece(i) + ", ");
+// }
+// System.out.print("\n");
             for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
             {
                 if(false == this.myPeer.hasPiece(i) && true == this.neighborPeer.hasPiece(i))
@@ -285,12 +292,18 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed N
         {
             //send the 1-byte message type (0 = choke)
             socketStream.writeByte(0);
+
+            //update status of neighborWasToldChoked to true
+            this.neighborPeer.setNeighborWasToldChoked(true);
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Choke.\n");
         }
         else
         {
             //send the 1-byte message type (1 = unchoke)
             socketStream.writeByte(1);
+
+            //update status of neighborWasToldChoked to false
+            this.neighborPeer.setNeighborWasToldChoked(false);
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent UN-Choke.\n");
         }
     }
@@ -344,7 +357,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed R
                 }
 else
 {
-System.out.print("\n\n\n\n\n\n\nClientThread " + this.neighborPeer.getPeerId() + " didn't qualify for sendPiece(), probably due to unchoke change --- IT ACTUALLY HAPPENED!!!\n\n\n\n\n\n\n");
+System.out.print("\n\n\nClientThread " + this.neighborPeer.getPeerId() + " didn't qualify for sendPiece(), probably due to unchoke change --- IT ACTUALLY HAPPENED!!!\n\n\n");
 }
                 //clear the "neighborRequestedPiece" field
                 this.neighborPeer.setNeighborRequestedPiece(-1);
@@ -418,7 +431,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Piece 
                     //tell the main PeerProcess to tell all the ClientThreads to notify their peer partners with a "have" message
                     ThreadMessage messageToPeerProcess = new ThreadMessage(ThreadMessage.ThreadMessageType.PEERPROCESSHAVE, pieceIndex);
                     this.messagesToPeerProcess.add(messageToPeerProcess);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told the ThreadMessage to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told the PeerProcess to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");
                     
                     //check if this peer is still interested in the neighbor now that it has a new piece
                     determineInterest();
@@ -506,6 +519,12 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Reques
         synchronized(this.clientThreadLock)
         {
             this.neighborPeer.setPiecesNotified(havePieceIndex);
+
+            //and also re-determine interest with the neighbor
+            synchronized(this.peerProcessLock)
+            {
+                determineInterest();
+            }
         }
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Have Piece # " + havePieceIndex + " message.\n");
     }
