@@ -23,6 +23,8 @@ public class PeerObject
     private Socket socket;
     private volatile int bytesDownloadedFrom;
     private volatile BitSet bitfield;
+    private volatile BitSet piecesNotified;
+    private volatile boolean allPiecesNotified;
     private volatile int[] requested;
     private volatile int neighborRequestedPiece;
     private volatile boolean neighborInterested;
@@ -46,6 +48,8 @@ public class PeerObject
 
         //set the bitfield to a size that is the number of pieces, as calculated from the Common.cfg file
         this.bitfield = new BitSet(ReadCommon.getNumberOfPieces());
+        //also make a parallel BitSet that keeps track of "have" messages sent to the neighbor
+        this.piecesNotified = new BitSet(ReadCommon.getNumberOfPieces());
         //if the peer has the setting in Peers.cfg indicating that it has the file, set the bitfield entries to true
         if(true == this.hasFile)
         {
@@ -61,6 +65,9 @@ public class PeerObject
             //BitSet's clear method sets all bits to false
             this.bitfield.clear();
         }
+        //also set the piecesNotified initial state to false
+        this.piecesNotified.clear();
+        this.allPiecesNotified = false;
 
         //set the default values of requested pieces from peerIds to "no peer" (represented by -1)
         this.requested = new int[ReadCommon.getNumberOfPieces()];
@@ -186,7 +193,7 @@ public class PeerObject
         //else set the bitfield to true, for the specified piece
         //Bitset's set() method changes the indicated index to the second parameter's value
         this.bitfield.set(pieceIndex, true);
-System.out.print("BITFIELD OF " + this.peerId + " : ");
+System.out.print("(SETBITFIELD)---BITFIELD OF " + this.peerId + " : ");
 for(int i = 0; i < ReadCommon.getNumberOfPieces(); i++)
 {
 System.out.print("#" + i + " = " + this.bitfield.get(i) + ", ");
@@ -219,6 +226,30 @@ System.out.print("\n");
     {
         //BitSet's cardinality() returns the number of true bits
         return this.bitfield.cardinality();
+    }
+    public void setPiecesNotified(int pieceIndex)
+    {
+        //error-check: check if the piece index is within bounds
+        if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
+        {
+            System.out.print("ERROR: PeerObject.java setPiecesNotified() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.exit(1);
+        }
+        
+        //set the piecesNotified piece to true
+        //Bitset's set() method changes the indicated index to the second parameter's value
+        this.piecesNotified.set(pieceIndex, true);
+
+System.out.print("ClientThread " + this.peerId + " notified of having " + this.piecesNotified.cardinality() + " total pieces so far.\n");
+        //check if this causes the all the pieces to have been notified
+        if(ReadCommon.getNumberOfPieces() == this.piecesNotified.cardinality())
+        {
+            this.allPiecesNotified = true;
+        }
+    }
+    public boolean getAllPiecesNotified()
+    {
+        return this.allPiecesNotified;
     }
     public int getRequested(int pieceIndex)
     {

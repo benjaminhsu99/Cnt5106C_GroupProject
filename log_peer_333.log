@@ -1,24 +1,47 @@
-[03/05/2021 22:42:10]: Peer 333 makes a connection to Peer 22.
-[03/05/2021 22:42:10]: Peer 333 makes a connection to Peer 1.
-[03/05/2021 22:42:10]: Peer 1 has downloaded the complete file.
-[03/05/2021 22:42:20]: Peer 333 is unchoked by 1.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 11 from 1. Now the number of pieces it has is 0.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 16 from 1. Now the number of pieces it has is 1.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 15 from 1. Now the number of pieces it has is 2.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 2 from 1. Now the number of pieces it has is 3.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 4 from 1. Now the number of pieces it has is 4.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 3 from 1. Now the number of pieces it has is 5.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 13 from 1. Now the number of pieces it has is 6.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 0 from 1. Now the number of pieces it has is 7.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 1 from 1. Now the number of pieces it has is 8.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 8 from 1. Now the number of pieces it has is 9.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 7 from 1. Now the number of pieces it has is 10.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 6 from 1. Now the number of pieces it has is 11.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 14 from 1. Now the number of pieces it has is 12.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 5 from 1. Now the number of pieces it has is 13.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 10 from 1. Now the number of pieces it has is 14.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 17 from 1. Now the number of pieces it has is 15.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 12 from 1. Now the number of pieces it has is 16.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the piece 9 from 1. Now the number of pieces it has is 17.
-[03/05/2021 22:42:20]: Peer 333 has downloaded the complete file.
-[03/05/2021 22:42:25]: Peer 333 is choked by 1.
+[03/06/2021 22:22:30]: Peer 333 makes a connection to Peer 22.
+[03/06/2021 22:22:30]: Peer 333 makes a connection to Peer 1.
+[03/06/2021 22:22:30]: Peer 1 has downloaded the complete file.
+[03/06/2021 22:22:35]: Peer 333 is unchoked by 1.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 4 from 1. Now the number of pieces it has is 1.
+[03/06/2021 22:22:35]: Peer 333 received the 'interested' message from 22.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 0 from 1. Now the number of pieces it has is 2.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 6 from 1. Now the number of pieces it has is 3.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 15 from 1. Now the number of pieces it has is 4.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 3 from 1. Now the number of pieces it has is 5.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 5 from 1. Now the number of pieces it has is 6.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 17 from 1. Now the number of pieces it has is 7.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 13 from 1. Now the number of pieces it has is 8.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 12 from 1. Now the number of pieces it has is 9.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 8 from 1. Now the number of pieces it has is 10.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 10 from 1. Now the number of pieces it has is 11.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 16 from 1. Now the number of pieces it has is 12.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 2 from 1. Now the number of pieces it has is 13.
+[03/06/2021 22:22:35]: Peer 333 has downloaded the piece 9 from 1. Now the number of pieces it has is 14.
+[03/06/2021 22:22:36]: Peer 333 has downloaded the piece 1 from 1. Now the number of pieces it has is 15.
+[03/06/2021 22:22:36]: Peer 333 has downloaded the piece 14 from 1. Now the number of pieces it has is 16.
+[03/06/2021 22:22:36]: Peer 333 has downloaded the piece 11 from 1. Now the number of pieces it has is 17.
+[03/06/2021 22:22:36]: Peer 333 has downloaded the piece 7 from 1. Now the number of pieces it has is 18.
+[03/06/2021 22:22:36]: Peer 333 has downloaded the complete file.
+[03/06/2021 22:22:40]: Peer 333 has the preferred neighbors 22.
+[03/06/2021 22:22:40]: Peer 333 is choked by 1.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 1.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 11.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 0.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 13.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 14.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 17.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 8.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 4.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 7.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 6.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 16.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 12.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 2.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 5.
+[03/06/2021 22:22:40]: Peer 333 received the 'have' message from 22 for the piece 10.
+[03/06/2021 22:22:41]: Peer 333 received the 'have' message from 22 for the piece 3.
+[03/06/2021 22:22:41]: Peer 333 received the 'have' message from 22 for the piece 9.
+[03/06/2021 22:22:41]: Peer 333 received the 'not interested' message from 22.
+[03/06/2021 22:22:41]: Peer 333 received the 'have' message from 22 for the piece 15.
+[03/06/2021 22:22:41]: Peer 22 has downloaded the complete file.
+[03/06/2021 22:22:45]: Peer 333 has the preferred neighbors [NONE].

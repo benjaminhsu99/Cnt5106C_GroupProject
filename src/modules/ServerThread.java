@@ -20,7 +20,7 @@ public class ServerThread extends Thread
     private LogWriter logger;
     private DataInputStream socketStream;
 
-    private  ClientThread clientThread;
+    private ClientThread clientThread;
 
     //constructor
     public ServerThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger)
@@ -38,14 +38,6 @@ public class ServerThread extends Thread
             //create a DataInputStream (using a InputStream in the constructor) that can receive data from the TCP socket
             this.socketStream = new DataInputStream(this.neighborPeer.getSocket().getInputStream());
 System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
-
-            //wait until the sibling ClientThread has been created
-            //the ClientThread will be the one that will modify the peer's PeerObject
-            //in order to avoid race conditions, so all new data is passed to the ClientThread
-            while(null == this.clientThread)
-            {
-                //block until clientThread is linked
-            }
 
             //receieve the initial handshake
             receiveHandshake();
@@ -84,6 +76,11 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
                 else if(3 == messageType)
                 {
                     receiveNotInterested();
+                }
+                //4 = Have
+                else if(4 == messageType)
+                {
+                    receiveHave();
                 }
                 //5 = Handshake
                 else if(5 == messageType)
@@ -254,5 +251,17 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Request
         ThreadMessage messageToClient = new ThreadMessage(pieceIndex, pieceBytes);
         this.clientThread.addThreadMessage(messageToClient);
 System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
+    }
+
+    private void receiveHave() throws SocketException, IOException
+    {
+        //read the requested piece index (4 byte int)
+        int pieceIndex = this.socketStream.readInt();
+
+        //pass a message to the ClientProcess for it to change PeerObject's interested status
+        //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
+        ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.HAVE, pieceIndex);
+        this.clientThread.addThreadMessage(messageToClient);
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Have Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
     }
 }

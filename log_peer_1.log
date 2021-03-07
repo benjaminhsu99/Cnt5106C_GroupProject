@@ -1,12 +1,49 @@
-[03/05/2021 22:42:07]: Peer 1 has downloaded the complete file.
-[03/05/2021 22:42:09]: Peer 1 is connected from Peer 22.
-[03/05/2021 22:42:10]: Peer 1 is connected from Peer 333.
-[03/05/2021 22:42:10]: Peer 1 received the 'interested' message from 333.
-[03/05/2021 22:42:10]: Peer 1 received the 'interested' message from 22.
-[03/05/2021 22:42:15]: Peer 1 has the preferred neighbors 22.
-[03/05/2021 22:42:15]: Peer 1 received the 'not interested' message from 22.
-[03/05/2021 22:42:20]: Peer 1 has the optimistically unchoked neighbor 333.
-[03/05/2021 22:42:20]: Peer 1 has the optimistically unchoked neighbor [NONE].
-[03/05/2021 22:42:20]: Peer 1 has the preferred neighbors 333.
-[03/05/2021 22:42:20]: Peer 1 received the 'not interested' message from 333.
-[03/05/2021 22:42:25]: Peer 1 has the preferred neighbors [NONE].
+[03/06/2021 22:22:27]: Peer 1 has downloaded the complete file.
+[03/06/2021 22:22:29]: Peer 1 is connected from Peer 22.
+[03/06/2021 22:22:30]: Peer 1 is connected from Peer 333.
+[03/06/2021 22:22:30]: Peer 1 received the 'interested' message from 333.
+[03/06/2021 22:22:30]: Peer 1 received the 'interested' message from 22.
+[03/06/2021 22:22:35]: Peer 1 has the preferred neighbors 333.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 4.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 0.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 6.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 15.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 3.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 5.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 17.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 13.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 12.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 8.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 10.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 16.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 2.
+[03/06/2021 22:22:35]: Peer 1 received the 'have' message from 333 for the piece 9.
+[03/06/2021 22:22:36]: Peer 1 received the 'have' message from 333 for the piece 1.
+[03/06/2021 22:22:36]: Peer 1 received the 'have' message from 333 for the piece 14.
+[03/06/2021 22:22:36]: Peer 1 received the 'have' message from 333 for the piece 11.
+[03/06/2021 22:22:36]: Peer 1 received the 'not interested' message from 333.
+[03/06/2021 22:22:36]: Peer 1 received the 'have' message from 333 for the piece 7.
+[03/06/2021 22:22:36]: Peer 333 has downloaded the complete file.
+[03/06/2021 22:22:40]: Peer 1 has the optimistically unchoked neighbor 22.
+[03/06/2021 22:22:40]: Peer 1 has the optimistically unchoked neighbor [NONE].
+[03/06/2021 22:22:40]: Peer 1 has the preferred neighbors 22.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 1.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 11.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 0.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 13.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 14.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 17.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 8.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 4.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 7.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 6.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 16.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 12.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 2.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 5.
+[03/06/2021 22:22:40]: Peer 1 received the 'have' message from 22 for the piece 10.
+[03/06/2021 22:22:41]: Peer 1 received the 'have' message from 22 for the piece 3.
+[03/06/2021 22:22:41]: Peer 1 received the 'have' message from 22 for the piece 9.
+[03/06/2021 22:22:41]: Peer 1 received the 'have' message from 22 for the piece 15.
+[03/06/2021 22:22:41]: Peer 22 has downloaded the complete file.
+[03/06/2021 22:22:45]: Peer 1 has the preferred neighbors [NONE].

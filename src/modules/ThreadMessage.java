@@ -24,7 +24,10 @@ public class ThreadMessage
         RECEIVEDCHOKE,
         RECEIVEDUNCHOKE,
         REQUEST,
-        PIECE;
+        PIECE,
+        PEERPROCESSHAVE,
+        SENDHAVE,
+        HAVE;
     }
     ThreadMessageType threadMessageType;
 
