@@ -86,11 +86,11 @@ public class PeerProcess extends Thread
     private PeerObject optimisticPeer;
     private PeerObject oldOptimisticPeerForLogger;
     //ArrayBlockingQueue for thread-safe message receiving from the ClientThreads
-    //its constructor requires specifying outright the capacity of the queue
-    //assume that 999,999,999 capacity is good enough??? (unknown how much slower the PeerProcess might be than the ClientThread)
+    //its constructor requires specifying outright the capacity of the queuu
     //since the queue blocks sending & receiving if full, there is technically a change of deadlock since ClientThread also has this same
     //type of queue that it uses to get messages from the ServerThreads, so the size of this queue was made very large just in case
-    private volatile Queue<ThreadMessage> messagesFromClientThreads = new ArrayBlockingQueue<ThreadMessage>(999999999);
+    //assume that 999 capacity is good enough??? (BANDAID FIX)
+    private volatile BlockingQueue<ThreadMessage> messagesFromClientThreads = new ArrayBlockingQueue<ThreadMessage>(999);
 
     //class constructor - which also sets up the TCP connections
     PeerProcess(int myPeerId)
@@ -223,7 +223,14 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
         for(int i = 0; i < this.clientThreads.length; i++)
         {
             ThreadMessage sendHaveMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDHAVE, havePieceIndex);
-            this.clientThreads[i].addThreadMessage(sendHaveMessage);
+            //check if the thread is still alive in the first place
+            synchronized(this.peerProcessLock)
+            {
+                if(Thread.State.TERMINATED != this.clientThreads[i].getState())
+                {
+                    this.clientThreads[i].addThreadMessage(sendHaveMessage);
+                }
+            }
 System.out.print("PeerProcess told ClientThread " + this.neighborPeers[i].getPeerId() + " to send a Have Piece # " + havePieceIndex + " message.\n");
         }
     }

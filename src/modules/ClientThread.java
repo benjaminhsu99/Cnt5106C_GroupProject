@@ -20,18 +20,20 @@ public class ClientThread extends Thread
     private PeerObject neighborPeer;
     private PeerObject myPeer;
     private LogWriter logger;
-    private Queue<ThreadMessage> messagesToPeerProcess;
+    private BlockingQueue<ThreadMessage> messagesToPeerProcess;
     private final Object peerProcessLock;
     private final Object clientThreadLock;
     private DataOutputStream socketStream;
 
-    //ArrayBlockingQueue for thread-safe message passing between threads
-    //its constructor requires specifying outright the capacity of the queue
-    //assume that 100 capacity is good enough??? (unknown how much slower the ClientThread might be than the ServerThread)
-    private volatile Queue<ThreadMessage> messagesFromServer = new ArrayBlockingQueue<ThreadMessage>(100);
+    ///ArrayBlockingQueue for thread-safe message receiving from the ServerThread and the PeerProcess
+    //its constructor requires specifying outright the capacity of the queuu
+    //since the queue blocks sending & receiving if full, there is technically a change of deadlock since PeerProcess also has this same
+    //type of queue that it uses to get messages from the ServerThreads, so the size of this queue was made very large just in case
+    //assume that 9,999 capacity is good enough??? (BANDAID FIX)
+    private volatile BlockingQueue<ThreadMessage> messagesFromServer = new ArrayBlockingQueue<ThreadMessage>(9999);
 
     //constructor
-    public ClientThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger, Queue<ThreadMessage> messagesToPeerProcess, Object peerProcessLock, Object clientThreadLock)
+    public ClientThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger, BlockingQueue<ThreadMessage> messagesToPeerProcess, Object peerProcessLock, Object clientThreadLock)
     {
         this.neighborPeer = neighborPeer;
         this.myPeer = myPeer;
@@ -56,76 +58,90 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
             sendBitfield();
 
             //continously send messages to the TCP socket until both peers of the socket have the file
-            while(
-            false == this.messagesFromServer.isEmpty() 
-            || false == this.myPeer.getHasFile() 
-            || false == this.neighborPeer.getHasFile() 
-            || false == this.neighborPeer.getMyChoked() 
-            || false == this.neighborPeer.getNeighborChoked() 
-            || false == this.neighborPeer.getAllPiecesNotified()
-            || false == this.neighborPeer.getNeighborWasToldChoked())
+            while(true)
             {
+if(0 == this.messagesFromServer.remainingCapacity())
+{
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " QUEUE IS FULL!!!!!.\n");
+}
                 //process any incoming task messages from the sibling ServerThread
-                if(false == this.messagesFromServer.isEmpty())
-                {
-                    ThreadMessage topMessage = this.messagesFromServer.remove();
+                ThreadMessage topMessage = this.messagesFromServer.take();
 
-                    //examine what kind of message task the ServerThread sent
-                    if(ThreadMessage.ThreadMessageType.BITFIELD == topMessage.getThreadMessageType())
-                    {
-                        processBitfieldMessage(topMessage);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.INTERESTSTATUS == topMessage.getThreadMessageType())
-                    {
-                        processInterestStatusMessage(topMessage);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.SENDCHOKE == topMessage.getThreadMessageType())
-                    {
-                        sendChokeOrUnchoke(true);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.SENDUNCHOKE == topMessage.getThreadMessageType())
-                    {
-                        sendChokeOrUnchoke(false);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.RECEIVEDCHOKE == topMessage.getThreadMessageType())
-                    {
-                        processChokeOrUnchoke(true);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.RECEIVEDUNCHOKE == topMessage.getThreadMessageType())
-                    {
-                        processChokeOrUnchoke(false);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.REQUEST == topMessage.getThreadMessageType())
-                    {
-                        processRequest(topMessage);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.PIECE == topMessage.getThreadMessageType())
-                    {
-                        processPiece(topMessage);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.SENDHAVE == topMessage.getThreadMessageType())
-                    {
-                        sendHave(topMessage);
-                    }
-                    else if(ThreadMessage.ThreadMessageType.HAVE == topMessage.getThreadMessageType())
-                    {
-                        processHave(topMessage);
-                    }
-                    else
-                    {
-                        System.out.print("ERROR: CLIENTTHREAD " + this.neighborPeer.getPeerId() + " GOT AN UNKNOWN THREADMESSAGE TYPE.\n");
-                    }
+                //examine what kind of message task the ServerThread sent
+                if(ThreadMessage.ThreadMessageType.BITFIELD == topMessage.getThreadMessageType())
+                {
+                    processBitfieldMessage(topMessage);
                 }
-                //otherwise, determine a piece to request for
+                else if(ThreadMessage.ThreadMessageType.INTERESTSTATUS == topMessage.getThreadMessageType())
+                {
+                    processInterestStatusMessage(topMessage);
+                }
+                else if(ThreadMessage.ThreadMessageType.SENDCHOKE == topMessage.getThreadMessageType())
+                {
+                    sendChokeOrUnchoke(true);
+                }
+                else if(ThreadMessage.ThreadMessageType.SENDUNCHOKE == topMessage.getThreadMessageType())
+                {
+                    sendChokeOrUnchoke(false);
+                }
+                else if(ThreadMessage.ThreadMessageType.RECEIVEDCHOKE == topMessage.getThreadMessageType())
+                {
+                    processChokeOrUnchoke(true);
+                }
+                else if(ThreadMessage.ThreadMessageType.RECEIVEDUNCHOKE == topMessage.getThreadMessageType())
+                {
+                    processChokeOrUnchoke(false);
+                }
+                else if(ThreadMessage.ThreadMessageType.REQUEST == topMessage.getThreadMessageType())
+                {
+                    processRequest(topMessage);
+                }
+                else if(ThreadMessage.ThreadMessageType.PIECE == topMessage.getThreadMessageType())
+                {
+                    processPiece(topMessage);
+                }
+                else if(ThreadMessage.ThreadMessageType.SENDHAVE == topMessage.getThreadMessageType())
+                {
+                    sendHave(topMessage);
+                }
+                else if(ThreadMessage.ThreadMessageType.HAVE == topMessage.getThreadMessageType())
+                {
+                    processHave(topMessage);
+                }
                 else
                 {
-                    determineRequest();
+                    System.out.print("ERROR: CLIENTTHREAD " + this.neighborPeer.getPeerId() + " GOT AN UNKNOWN THREADMESSAGE TYPE.\n");
+                }
+
+                //check if a piece can be requested after processing the task above
+                determineRequest();
+
+                //check if the conditions to terminate the while loop have been met
+                if(
+                true == this.messagesFromServer.isEmpty() 
+                && true == this.myPeer.getHasFile() 
+                && true == this.neighborPeer.getHasFile() 
+                && true == this.neighborPeer.getMyChoked() 
+                && true == this.neighborPeer.getNeighborChoked() 
+                && true == this.neighborPeer.getAllPiecesNotified()
+                && true == this.neighborPeer.getNeighborWasToldChoked())
+                {
+                    break;
                 }
             }
 
             //close the socket (which should cause the ServerThread to close via SocketException or EOFException)
-            this.neighborPeer.getSocket().close();
+            synchronized(this.peerProcessLock)
+            {
+                this.neighborPeer.getSocket().close();
+            }
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to kill itself.\n");
+        }
+        catch(InterruptedException exception)
+        {
+            System.out.print("\n\n\n\n\nPOSSIBLE ERROR (OR MAY JUST BE HARMLESS EXCEPTION): ClientThread " + this.neighborPeer.getPeerId() + " --- InterupptedException (BlockingQueue).\n");
+            exception.printStackTrace();
+            System.out.print("\n\n\n\n\n");
         }
         catch(IOException exception)
         {
@@ -139,7 +155,16 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
     //helper methods
     public void addThreadMessage(ThreadMessage messageFromServer)
     {
-        this.messagesFromServer.add(messageFromServer);
+        try
+        {
+            this.messagesFromServer.put(messageFromServer);
+        }
+        catch(InterruptedException exception)
+        {
+            System.out.print("\n\n\n\n\nPOSSIBLE ERROR (OR MAY JUST BE HARMLESS EXCEPTION): ClientThread " + this.neighborPeer.getPeerId() + " --- InterupptedException (BlockingQueue while doing 'addThreadMessage').\n");
+            exception.printStackTrace();
+            System.out.print("\n\n\n\n\n");
+        }
     }
 
     private void sendHandshake() throws IOException
@@ -402,7 +427,7 @@ System.out.print("\n\n\nClientThread " + this.neighborPeer.getPeerId() + " didn'
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Piece # " + pieceIndex + ".\n");
     }
 
-    private void processPiece(ThreadMessage pieceMessage) throws IOException
+    private void processPiece(ThreadMessage pieceMessage) throws InterruptedException, IOException
     {
         synchronized(this.clientThreadLock)
         {
@@ -430,7 +455,11 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Piece 
 
                     //tell the main PeerProcess to tell all the ClientThreads to notify their peer partners with a "have" message
                     ThreadMessage messageToPeerProcess = new ThreadMessage(ThreadMessage.ThreadMessageType.PEERPROCESSHAVE, pieceIndex);
-                    this.messagesToPeerProcess.add(messageToPeerProcess);
+if(0 == this.messagesToPeerProcess.remainingCapacity())
+{
+System.out.print("PeerProcess" + this.neighborPeer.getPeerId() + " QUEUE IS FULL!!!!!.\n");
+}
+                    this.messagesToPeerProcess.put(messageToPeerProcess);
 System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told the PeerProcess to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");
                     
                     //check if this peer is still interested in the neighbor now that it has a new piece
