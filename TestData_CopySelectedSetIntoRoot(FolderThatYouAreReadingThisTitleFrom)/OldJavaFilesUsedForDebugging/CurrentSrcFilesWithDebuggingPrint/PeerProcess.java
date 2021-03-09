@@ -231,7 +231,7 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
     {
         int havePieceIndex = message.getPieceIndex();
         
-//System.out.print(LocalDateTime.now() + " PeerProcess waiting for Piece # " + havePieceIndex + " to be processed before commanding for 'have' messages to be sent.\n");
+System.out.print(LocalDateTime.now() + " PeerProcess waiting for Piece # " + havePieceIndex + " to be processed before commanding for 'have' messages to be sent.\n");
         //wait until the piece has actually been processed before commanding to send the "have piece" messages
         try
         {
@@ -243,15 +243,15 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
             exception.printStackTrace();
             System.out.print("\n\n\n\n\n");
         }
-//System.out.print(LocalDateTime.now() + " PeerProcess OK TO GO for Piece # " + havePieceIndex + " whose processed lock was cleared.\n");
+System.out.print(LocalDateTime.now() + " PeerProcess OK TO GO for Piece # " + havePieceIndex + " whose processed lock was cleared.\n");
 
         //tell each of the ClientThreads to send a "have" message to their neighbor
         for(int i = 0; i < this.clientThreads.length; i++)
         {
             ThreadMessage sendHaveMessage = new ThreadMessage(ThreadMessage.ThreadMessageType.SENDHAVE, havePieceIndex);
-//System.out.print(LocalDateTime.now() + " PeerProcess is trying to tell... ClientThread " + this.neighborPeers[i].getPeerId() + " to send a Have Piece # " + havePieceIndex + " message.\n");
+System.out.print(LocalDateTime.now() + " PeerProcess is trying to tell... ClientThread " + this.neighborPeers[i].getPeerId() + " to send a Have Piece # " + havePieceIndex + " message.\n");
             clientThreads[i].addThreadMessage(sendHaveMessage);
-//System.out.print(LocalDateTime.now() + " PeerProcess told ClientThread " + this.neighborPeers[i].getPeerId() + " to send a Have Piece # " + havePieceIndex + " message.\n");
+System.out.print(LocalDateTime.now() + " PeerProcess told ClientThread " + this.neighborPeers[i].getPeerId() + " to send a Have Piece # " + havePieceIndex + " message.\n");
         }
     }
 
@@ -268,16 +268,16 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
                 this.unchokingTimer = System.currentTimeMillis();
                 unchokeOptimistic();
                 this.optimisticUnchokingTimer = System.currentTimeMillis();
-// System.out.print(LocalDateTime.now() + " INITIAL RANDOM: Unchoked Status: ");
-// for(int i = 0; i < this.neighborPeers.length; i++)
-// {
-// System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
-// if(this.neighborPeers[i] == this.optimisticPeer)
-// {
-// System.out.print("<===OPTIMISTIC ");
-// }
-// }
-// System.out.print("\n");
+System.out.print(LocalDateTime.now() + " INITIAL RANDOM: Unchoked Status: ");
+for(int i = 0; i < this.neighborPeers.length; i++)
+{
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
+if(this.neighborPeers[i] == this.optimisticPeer)
+{
+System.out.print("<===OPTIMISTIC ");
+}
+}
+System.out.print("\n");
             }
             else
             {
@@ -296,16 +296,16 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
                         selectivelyUnchokePreferred();
                         this.unchokingTimer = System.currentTimeMillis();
                     }
-// System.out.print(LocalDateTime.now() + " (PREFERRED TIMED OUT): Choked? Status: ");
-// for(int i = 0; i < this.neighborPeers.length; i++)
-// {
-// System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
-// if(this.neighborPeers[i] == this.optimisticPeer)
-// {
-// System.out.print("<===OPTIMISTIC ");
-// }
-// }
-// System.out.print("\n");
+System.out.print(LocalDateTime.now() + " (PREFERRED TIMED OUT): Choked? Status: ");
+for(int i = 0; i < this.neighborPeers.length; i++)
+{
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
+if(this.neighborPeers[i] == this.optimisticPeer)
+{
+System.out.print("<===OPTIMISTIC ");
+}
+}
+System.out.print("\n");
                 }
 
                 //evaluate if the optimistic choking interval time has passed
@@ -313,16 +313,16 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
                 {
                     unchokeOptimistic();
                     this.optimisticUnchokingTimer = System.currentTimeMillis();
-// System.out.print(LocalDateTime.now() + " (OPTIMISTIC TIMED OUT): Choked? Status: ");
-// for(int i = 0; i < this.neighborPeers.length; i++)
-// {
-// System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
-// if(this.neighborPeers[i] == this.optimisticPeer)
-// {
-// System.out.print("<===OPTIMISTIC ");
-// }
-// }
-// System.out.print("\n");
+System.out.print(LocalDateTime.now() + " (OPTIMISTIC TIMED OUT): Choked? Status: ");
+for(int i = 0; i < this.neighborPeers.length; i++)
+{
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
+if(this.neighborPeers[i] == this.optimisticPeer)
+{
+System.out.print("<===OPTIMISTIC ");
+}
+}
+System.out.print("\n");
                 }   
             }
         }
@@ -536,12 +536,12 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
             int indexOfHighestBytesCount = 0;
             List<Integer> tieBreakerList = new ArrayList<Integer>();
             tieBreakerList.add(0);
-// System.out.print(LocalDateTime.now() + " (SELECTIVE UNCHOKE-CURRENT BYTES COUNTS) ---");
-// for(int i = 0; i < this.chokedNeighbors.size(); i++)
-// {
-// System.out.print(this.chokedNeighbors.get(i).getPeerId() + "=" + this.chokedNeighbors.get(i).getBytesDownloadedFrom() + "   ");
-// }
-// System.out.print("\n");
+System.out.print(LocalDateTime.now() + " (SELECTIVE UNCHOKE-CURRENT BYTES COUNTS) ---");
+for(int i = 0; i < this.chokedNeighbors.size(); i++)
+{
+System.out.print(this.chokedNeighbors.get(i).getPeerId() + "=" + this.chokedNeighbors.get(i).getBytesDownloadedFrom() + "   ");
+}
+System.out.print("\n");
             for(int i = 1; i < this.chokedNeighbors.size(); i++)
             {
                 if(this.chokedNeighbors.get(i).getBytesDownloadedFrom() > highestBytesCount)

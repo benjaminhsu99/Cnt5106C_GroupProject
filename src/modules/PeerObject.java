@@ -251,6 +251,18 @@ System.out.print("ClientThread " + this.peerId + " notified of having " + this.p
             this.allPiecesNotified = true;
         }
     }
+    public boolean wasPieceNotified(int pieceIndex)
+    {
+        //error-check: check if the piece index is within bounds
+        if(ReadCommon.getNumberOfPieces() <= pieceIndex || 0 > pieceIndex)
+        {
+            System.out.print("ERROR: PeerObject.java wasPieceNotified() --- pieceIndex " + pieceIndex +" is not a valid piece number.\n");
+            System.exit(1);
+        }
+        
+        //return whether the piece was notified already or not
+        return this.piecesNotified.get(pieceIndex);
+    }
     public boolean getAllPiecesNotified()
     {
         return this.allPiecesNotified;

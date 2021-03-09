@@ -11,6 +11,7 @@ package src.modules;
 import java.io.*; //Exceptions
 import java.util.*; //BitSet
 import java.net.*; //Socket
+import java.util.concurrent.*; //ArrayBlockingQueue
 
 public class ThreadMessage
 {
@@ -34,6 +35,7 @@ public class ThreadMessage
     private byte[] bytesArray;
     private boolean interestStatus;
     private int pieceIndex;
+    private BlockingQueue<Integer> pieceProcessedLock;
 
     //constructors
     public ThreadMessage(byte[] bitfield)
@@ -46,11 +48,18 @@ public class ThreadMessage
         this.threadMessageType = ThreadMessageType.INTERESTSTATUS;
         this.interestStatus = interestStatus;
     }
-    public ThreadMessage(int pieceIndex, byte[] pieceBytes)
+    public ThreadMessage(int pieceIndex, byte[] pieceBytes, BlockingQueue<Integer> pieceProcessedLock)
     {
         this.threadMessageType = ThreadMessageType.PIECE;
         this.pieceIndex = pieceIndex;
         this.bytesArray = pieceBytes;
+        this.pieceProcessedLock = pieceProcessedLock;
+    }
+    public ThreadMessage(ThreadMessageType threadMessageType, int pieceIndex, BlockingQueue<Integer> pieceProcessedLock)
+    {
+        this.threadMessageType = threadMessageType;
+        this.pieceIndex = pieceIndex;
+        this.pieceProcessedLock = pieceProcessedLock;
     }
     public ThreadMessage(ThreadMessageType threadMessageType, int pieceIndex)
     {
@@ -78,5 +87,9 @@ public class ThreadMessage
     public int getPieceIndex()
     {
         return this.pieceIndex;
+    }
+    public BlockingQueue<Integer> getPieceProcessedLock()
+    {
+        return this.pieceProcessedLock;
     }
 }
