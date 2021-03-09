@@ -32,7 +32,7 @@ public class PeerObject
     private volatile boolean myInterested;
     private volatile boolean neighborChoked;
     private volatile boolean myChoked;
-    private ClientThread clientThread;
+    private volatile ClientThread clientThread;
 
     //object constructor
     public PeerObject(int peerId, String hostName, int portNumber, boolean hasFile)
@@ -297,6 +297,19 @@ System.out.print("ClientThread " + this.peerId + " notified of having " + this.p
                 this.requested[i] = -1;
             }
         }
+    }
+    public void debugPrintOutgoingRequests()
+    {
+        System.out.print(this.peerId + " current outgoing requests: ");
+        //print the list of current outgoing requests
+        for(int i = 0; i < this.requested.length; i++)
+        {
+            if(-1 != this.requested[i])
+            {
+                System.out.print("Piece # " + i + " from " + this.requested[i] + "---");
+            }
+        }
+        System.out.print("\n");
     }
     public int getNeighborRequestedPiece()
     {

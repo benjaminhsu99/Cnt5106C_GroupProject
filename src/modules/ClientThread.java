@@ -13,6 +13,7 @@ import java.net.*; //SocketException
 import java.nio.charset.*; //StandardCharsets
 import java.util.*; //Queue, Random
 import java.util.concurrent.*; //ArrayBlockingQueue
+import java.time.*; //LocalDateTime
 
 public class ClientThread extends Thread
 {
@@ -27,9 +28,7 @@ public class ClientThread extends Thread
 
     ///ArrayBlockingQueue for thread-safe message receiving from the ServerThread and the PeerProcess
     //its constructor requires specifying outright the capacity of the queuu
-    //since the queue blocks sending & receiving if full, there is technically a change of deadlock since PeerProcess also has this same
-    //type of queue that it uses to get messages from the ServerThreads, so the size of this queue was made very large just in case
-    //assume that 9,999 capacity is good enough??? (BANDAID FIX)
+    //assume that 9999 capacity is good enough capacity to not be slowed down by a full queue
     private volatile BlockingQueue<ThreadMessage> messagesFromServer = new ArrayBlockingQueue<ThreadMessage>(9999);
 
     //constructor
@@ -48,7 +47,7 @@ public class ClientThread extends Thread
     {
         try
         {
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
             //create a DataOutputStream (using a OutputStream in the constructor) that can send data to the TCP socket
             this.socketStream = new DataOutputStream(this.neighborPeer.getSocket().getOutputStream());
 
@@ -60,10 +59,6 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
             //continously send messages to the TCP socket until both peers of the socket have the file
             while(true)
             {
-if(0 == this.messagesFromServer.remainingCapacity())
-{
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " QUEUE IS FULL!!!!!.\n");
-}
                 //process any incoming task messages from the sibling ServerThread
                 ThreadMessage topMessage = this.messagesFromServer.take();
 
@@ -132,7 +127,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " QUEUE IS FU
 
             //close the socket (which should cause the ServerThread to close via SocketException or EOFException)
             this.neighborPeer.getSocket().close();
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to kill itself.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to kill itself.\n");
         }
         catch(InterruptedException exception)
         {
@@ -146,7 +141,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told Server
             exception.printStackTrace();
             System.out.print("\n\n\n\n\n");
         }
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
     }
 
     //helper methods
@@ -161,6 +156,18 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
             System.out.print("\n\n\n\n\nPOSSIBLE ERROR (OR MAY JUST BE HARMLESS EXCEPTION): ClientThread " + this.neighborPeer.getPeerId() + " --- InterupptedException (BlockingQueue while doing 'addThreadMessage').\n");
             exception.printStackTrace();
             System.out.print("\n\n\n\n\n");
+        }
+    }
+
+    public boolean isInboxFull()
+    {
+        if(0 == this.messagesFromServer.remainingCapacity())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -184,7 +191,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
 
         //send the 4-byte int peerId
         socketStream.writeInt(this.myPeer.getPeerId());
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Handshake.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Handshake.\n");
     }
 
     private void sendBitfield() throws IOException
@@ -214,7 +221,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Handsh
                 }
             }
         }
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Bitfield.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Bitfield.\n");
     }
 
     private void processBitfieldMessage(ThreadMessage bitfieldMessage) throws IOException
@@ -222,13 +229,15 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Bitfie
         this.neighborPeer.setBitfieldFromBytes(bitfieldMessage.getBytesArray(), this.logger);
 
         determineInterest();
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Bitfield from ServerThread.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " processed Bitfield from ServerThread.\n");
     }
 
     private void determineInterest() throws IOException
     {
+System.out.print(LocalDateTime.now() + "[determineInterest()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain clientThreadLock.\n");
         synchronized(this.clientThreadLock)
         {
+System.out.print(LocalDateTime.now() + "[determineInterest()] ClientThread " + this.neighborPeer.getPeerId() + " obtained clientThreadLock.\n");
             boolean initialInterestState = this.neighborPeer.getMyInterested();
             boolean neighborHasMissing = false;
             //find if the neighbor has any missing piece
@@ -259,6 +268,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed B
                 sendNotInterested();
             }
         }
+System.out.print(LocalDateTime.now() + "[determineChokeOrUnchoke()] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n");
     }
 
     private void sendInterested() throws IOException
@@ -270,7 +280,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed B
 
         //send the 1-byte message type (2 = interested)
         socketStream.writeByte(2);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Interested message.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Interested message.\n");
     }
 
     private void sendNotInterested() throws IOException
@@ -282,7 +292,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Intere
 
         //send the 1-byte message type (3 = not interested)
         socketStream.writeByte(3);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent NOT-Interested.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent NOT-Interested.\n");
     }
 
     private void processInterestStatusMessage(ThreadMessage interestStatusMessage)
@@ -294,12 +304,12 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent NOT-In
         if(true == interestStatusMessage.getInterestStatus())
         {
             this.logger.logInterested(this.neighborPeer.getPeerId());
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Interested message from ServerThread.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " processed Interested message from ServerThread.\n");
         }
         else
         {
             this.logger.logNotInterested(this.neighborPeer.getPeerId());
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed NOT-Interested message from ServerThread.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " processed NOT-Interested message from ServerThread.\n");
         }
     }
 
@@ -317,7 +327,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed N
 
             //update status of neighborWasToldChoked to true
             this.neighborPeer.setNeighborWasToldChoked(true);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Choke.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Choke as commanded by PeerProcess.\n");
         }
         else
         {
@@ -326,14 +336,16 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Choke.
 
             //update status of neighborWasToldChoked to false
             this.neighborPeer.setNeighborWasToldChoked(false);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent UN-Choke.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent UN-Choke as commanded by PeerProcess.\n");
         }
     }
 
     private void processChokeOrUnchoke(boolean choked) throws IOException
     {
+System.out.print(LocalDateTime.now() + "[determineChokeOrUnchoke()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain clientThreadLock.\n");
         synchronized(this.clientThreadLock)
         {
+System.out.print(LocalDateTime.now() + "[determineChokeOrUnchoke()] ClientThread " + this.neighborPeer.getPeerId() + " obtained clientThreadLock.\n");
             if(true == choked)
             {
                 this.neighborPeer.setNeighborChoked(true);
@@ -341,15 +353,16 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent UN-Cho
 
                 //also clear out any record of current piece requests to the neighbor that just choked this peer
                 this.myPeer.clearRequested(this.neighborPeer.getPeerId());
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Choke message from ServerThread.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " processed Choke message from ServerThread.\n");
             }
             else
             {
                 this.neighborPeer.setNeighborChoked(false);
                 this.logger.logUnchoked(this.neighborPeer.getPeerId());
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed UN-Choke message from ServerThread.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " processed UN-Choke message from ServerThread.\n");
             }
         }
+System.out.print(LocalDateTime.now() + "[determineChokeOrUnchoke()] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n"); 
     }
 
     private void processRequest(ThreadMessage requestMessage) throws IOException
@@ -358,78 +371,100 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed U
         int requestedPieceIndex = requestMessage.getPieceIndex();
 
         //change the request status
+System.out.print(LocalDateTime.now() + "[processRequest() part 1] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain clientThreadLock.\n");   
         synchronized(this.clientThreadLock)
         {
+System.out.print(LocalDateTime.now() + "[processRequest() part 1] ClientThread " + this.neighborPeer.getPeerId() + " obtained clientThreadLock.\n");   
+System.out.print(LocalDateTime.now() + "[processRequest() part 1] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain peerProcessLock.\n");   
             synchronized(this.peerProcessLock)
             {
+System.out.print(LocalDateTime.now() + "[processRequest() part 1] ClientThread " + this.neighborPeer.getPeerId() + " obtained peerProcessLock.\n");   
                 this.neighborPeer.setNeighborRequestedPiece(requestedPieceIndex);
             }
+System.out.print(LocalDateTime.now() + "[processPiece() part 1] ClientThread " + this.neighborPeer.getPeerId() + " released peerProcessLock.\n");   
         }
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Request for Piece # " + requestedPieceIndex + " from ServerThread.\n");
+System.out.print(LocalDateTime.now() + "[processPiece() part 1] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n"); 
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " processed Request for Piece # " + requestedPieceIndex + " from ServerThread.\n");
 
         //check if the peer is unchoked, and send the piece if so
         //there is a rare chance for the PeerProcess to have changed unchoking peers by this point
+System.out.print(LocalDateTime.now() + "[processPiece() part 2] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain clientThreadLock.\n");   
         synchronized(this.clientThreadLock)
         {
+System.out.print(LocalDateTime.now() + "[processPiece() part 2] ClientThread " + this.neighborPeer.getPeerId() + " obtained clientThreadLock.\n");   
+System.out.print(LocalDateTime.now() + "[processPiece() part 2] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain peerProcessLock.\n");   
             synchronized(this.peerProcessLock)
             {
+System.out.print(LocalDateTime.now() + "[processPiece() part 2] ClientThread " + this.neighborPeer.getPeerId() + " obtained peerProcessLock.\n");   
                 if(false == this.neighborPeer.getMyChoked() && -1 != this.neighborPeer.getNeighborRequestedPiece())
                 {
                     sendPiece(this.neighborPeer.getNeighborRequestedPiece());
                 }
 else
 {
-System.out.print("\n\n\nClientThread " + this.neighborPeer.getPeerId() + " didn't qualify for sendPiece(), probably due to unchoke change --- IT ACTUALLY HAPPENED!!!\n\n\n");
+System.out.print("\n\n\n" + LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " didn't qualify for sendPiece(), probably due to unchoke change --- IT ACTUALLY HAPPENED!!!\n\n\n");
 }
                 //clear the "neighborRequestedPiece" field
                 this.neighborPeer.setNeighborRequestedPiece(-1);
             }
+System.out.print(LocalDateTime.now() + "[processPiece() part 2] ClientThread " + this.neighborPeer.getPeerId() + " released peerProcessLock.\n");   
         }
+System.out.print(LocalDateTime.now() + "[processPiece() part 2] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n"); 
     }
 
     private void sendPiece(int pieceIndex) throws IOException
     {
-        //check if the peer even has the piece in the first place (shouldn't be possible to get a request for a piece it doesn't have - but perform this check anyways)
-        if(false == this.myPeer.hasPiece(pieceIndex))
-        {
-            System.out.print("ERROR: ClientThread " + this.neighborPeer.getPeerId() + " was requested to send piece " + pieceIndex + " but doesn't have it!?\n");
-            return;
-        }
-
-        //set message length (message type 1 byte + 4-byte int piece index + bytes of the piece size payload)
-        int messageLength;
-        //case in which the piece is the last piece (which may have a non-normal piece size)
-        if(ReadCommon.getNumberOfPieces() - 1 == pieceIndex)
-        {
-            int sizeOfLastPiece = ReadCommon.getFileSize() - (ReadCommon.getNumberOfPieces() - 1) * ReadCommon.getPieceSize();
-            messageLength = 1 + 4 + sizeOfLastPiece;
-        }
-        //otherwise just use a normal piece size
-        else
-        {
-            messageLength = 1 + 4 + ReadCommon.getPieceSize();
-        }
-        //send the 4-byte int message length
-        socketStream.writeInt(messageLength);
-
-        //send the 1-byte message type (7 = piece)
-        socketStream.writeByte(7);
-
-        //send the 4-byte int piece index
-        socketStream.writeInt(pieceIndex);
-
-        //send the piece itself
-        byte[] pieceContents = this.myPeer.getFileWriter().readPiece(pieceIndex);
-        socketStream.write(pieceContents, 0, pieceContents.length);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Piece # " + pieceIndex + ".\n");
-    }
-
-    private void processPiece(ThreadMessage pieceMessage) throws InterruptedException, IOException
-    {
+System.out.print(LocalDateTime.now() + "[sendPiece()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain clientThreadLock.\n");   
         synchronized(this.clientThreadLock)
         {
+System.out.print(LocalDateTime.now() + "[sendPiece()] ClientThread " + this.neighborPeer.getPeerId() + " obtained clientThreadLock.\n");   
+            //check if the peer even has the piece in the first place (shouldn't be possible to get a request for a piece it doesn't have - but perform this check anyways)
+            if(false == this.myPeer.hasPiece(pieceIndex))
+            {
+                System.out.print("ERROR: ClientThread " + this.neighborPeer.getPeerId() + " was requested to send piece " + pieceIndex + " but doesn't have it!?\n");
+                return;
+            }
+
+            //set message length (message type 1 byte + 4-byte int piece index + bytes of the piece size payload)
+            int messageLength;
+            //case in which the piece is the last piece (which may have a non-normal piece size)
+            if(ReadCommon.getNumberOfPieces() - 1 == pieceIndex)
+            {
+                int sizeOfLastPiece = ReadCommon.getFileSize() - (ReadCommon.getNumberOfPieces() - 1) * ReadCommon.getPieceSize();
+                messageLength = 1 + 4 + sizeOfLastPiece;
+            }
+            //otherwise just use a normal piece size
+            else
+            {
+                messageLength = 1 + 4 + ReadCommon.getPieceSize();
+            }
+            //send the 4-byte int message length
+            socketStream.writeInt(messageLength);
+
+            //send the 1-byte message type (7 = piece)
+            socketStream.writeByte(7);
+
+            //send the 4-byte int piece index
+            socketStream.writeInt(pieceIndex);
+
+            //send the piece itself
+            byte[] pieceContents = this.myPeer.getFileWriter().readPiece(pieceIndex);
+            socketStream.write(pieceContents, 0, pieceContents.length);
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Piece # " + pieceIndex + ".\n");
+        }
+System.out.print(LocalDateTime.now() + "[sendPiece()] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n");   
+    }
+
+    private void processPiece(ThreadMessage pieceMessage) throws IOException
+    {
+System.out.print(LocalDateTime.now() + "[processPiece()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain clientThreadLock.\n");   
+        synchronized(this.clientThreadLock)
+        {
+System.out.print(LocalDateTime.now() + "[processPiece()] ClientThread " + this.neighborPeer.getPeerId() + " obtained clientThreadLock.\n");   
+System.out.print(LocalDateTime.now() + "[processPiece()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain peerProcessLock.\n");   
             synchronized(this.peerProcessLock)
             {
+System.out.print(LocalDateTime.now() + "[processPiece()] ClientThread " + this.neighborPeer.getPeerId() + " obtained peerProcessLock.\n");   
                 int pieceIndex = pieceMessage.getPieceIndex();
                 byte[] pieceBytes = pieceMessage.getBytesArray();
 
@@ -449,31 +484,27 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Piece 
 
                     //clear any record of currently requested pieces
                     this.myPeer.clearRequested(this.neighborPeer.getPeerId());
-
-                    //tell the main PeerProcess to tell all the ClientThreads to notify their peer partners with a "have" message
-                    ThreadMessage messageToPeerProcess = new ThreadMessage(ThreadMessage.ThreadMessageType.PEERPROCESSHAVE, pieceIndex);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " is trying... to tell the PeerProcess to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");
-if(0 == this.messagesToPeerProcess.remainingCapacity())
-{
-System.out.print("PeerProcess/ClientThread " + this.neighborPeer.getPeerId() + " QUEUE IS FULL!!!!!.\n");
-}
-                    this.messagesToPeerProcess.put(messageToPeerProcess);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told the PeerProcess to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");
                     
                     //check if this peer is still interested in the neighbor now that it has a new piece
                     determineInterest();
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Piece # " + pieceIndex + " from ServerThread.\n");                    
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " processed Piece # " + pieceIndex + " from ServerThread.\n");                    
                 }
             }
+System.out.print(LocalDateTime.now() + "[processPiece()] ClientThread " + this.neighborPeer.getPeerId() + " released peerProcessLock.\n");   
         }
+System.out.print(LocalDateTime.now() + "[processPiece()] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n");  
     }
 
     private void determineRequest() throws IOException
     {
+System.out.print(LocalDateTime.now() + "[determineRequest()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain clientThreadLock.\n");   
         synchronized(this.clientThreadLock)
         {
+System.out.print(LocalDateTime.now() + "[determineRequest()] ClientThread " + this.neighborPeer.getPeerId() + " obtained clientThreadLock.\n");   
+System.out.print(LocalDateTime.now() + "[determineRequest()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain peerProcessLock.\n");   
             synchronized(this.peerProcessLock)
             {
+System.out.print(LocalDateTime.now() + "[determineRequest()] ClientThread " + this.neighborPeer.getPeerId() + " obtained peerProcessLock.\n");   
                 //can only request a piece if is unchoked by the neighbor and if is interested in the neighbor
                 if(false == this.neighborPeer.getNeighborChoked() && true == this.neighborPeer.getMyInterested())
                 {
@@ -507,8 +538,11 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed P
                         sendRequest(potentialRequestPieces.get(randomIndex));
                     }
                 }
+this.myPeer.debugPrintOutgoingRequests();
             }
+System.out.print(LocalDateTime.now() + "[determineRequest()] ClientThread " + this.neighborPeer.getPeerId() + " released peerProcessLock.\n");
         }
+System.out.print(LocalDateTime.now() + "[determineRequest()] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n");
     }
 
     private void sendRequest(int pieceIndex) throws IOException
@@ -523,7 +557,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed P
 
         //send the 4-byte int piece that is requested
         socketStream.writeInt(pieceIndex);
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Request Piece # " + pieceIndex + " message.\n");
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Request Piece # " + pieceIndex + " message.\n");
     }
 
     private void sendHave(ThreadMessage messageFromPeerProcess) throws IOException
@@ -543,23 +577,16 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Reques
         socketStream.writeInt(havePieceIndex);
 
         //also set the "have" bitfield of the piecesNotified to the peer for the piece that was just notified
-        synchronized(this.clientThreadLock)
-        {
-            this.neighborPeer.setPiecesNotified(havePieceIndex);
-
-            //and also re-determine interest with the neighbor
-            synchronized(this.peerProcessLock)
-            {
-                determineInterest();
-            }
-        }
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Have Piece # " + havePieceIndex + " message.\n");
+        this.neighborPeer.setPiecesNotified(havePieceIndex);
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Have Piece # " + havePieceIndex + " message.\n");
     }
 
     private void processHave(ThreadMessage pieceMessage) throws IOException
     {
+System.out.print(LocalDateTime.now() + "[processHave()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain clientThreadLock.\n");
         synchronized(this.clientThreadLock)
         {
+System.out.print(LocalDateTime.now() + "[processHave()] ClientThread " + this.neighborPeer.getPeerId() + " obtained clientThreadLock.\n");   
             int pieceIndex = pieceMessage.getPieceIndex();
 
             //log the have event
@@ -568,12 +595,17 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Have P
             //write the piece into the local "view" of the neighbor's bitfield
             this.neighborPeer.setBitfieldPieceAsTrue(pieceIndex, this.logger);
 
+System.out.print(LocalDateTime.now() + "[processHave()] ClientThread " + this.neighborPeer.getPeerId() + " trying to obtain peerProcessLock.\n");
             //re-determine if this peer is now interested
             synchronized(this.peerProcessLock)
             {
+System.out.print(LocalDateTime.now() + "[processHave()] ClientThread " + this.neighborPeer.getPeerId() + " obtained peerProcessLock.\n");
                 determineInterest();
             }
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " processed Have Piece # " + pieceIndex + " from ServerThread.\n");
+System.out.print(LocalDateTime.now() + "[processHave()] ClientThread " + this.neighborPeer.getPeerId() + " released serverThreadLock.\n");   
+System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " processed Have Piece # " + pieceIndex + " from ServerThread.\n");
         }
+System.out.print(LocalDateTime.now() + "[processHave()] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n");   
+            int pieceIndex = pieceMessage.getPieceIndex();
     }
 }

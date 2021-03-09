@@ -11,6 +11,8 @@ package src.modules;
 import java.io.*; //IOException, EOFException, InputStream, DataInputStream
 import java.net.*; //SocketException
 import java.nio.charset.*; //StandardCharsets
+import java.util.concurrent.*; //ArrayBlockingQueue
+import java.time.*; //LocalDateTime
 
 public class ServerThread extends Thread
 {
@@ -18,16 +20,20 @@ public class ServerThread extends Thread
     private PeerObject neighborPeer;
     private PeerObject myPeer;
     private LogWriter logger;
+    private BlockingQueue<ThreadMessage> messagesToPeerProcess;
+    private final Object threadsLinkedTogetherLock;
     private DataInputStream socketStream;
 
     private ClientThread clientThread;
 
     //constructor
-    public ServerThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger)
+    public ServerThread(PeerObject neighborPeer, PeerObject myPeer, LogWriter logger, BlockingQueue<ThreadMessage> messagesToPeerProcess, Object threadsLinkedTogetherLock)
     {
         this.neighborPeer = neighborPeer;
         this.myPeer = myPeer;
         this.logger = logger;
+        this.messagesToPeerProcess = messagesToPeerProcess;
+        this.threadsLinkedTogetherLock = threadsLinkedTogetherLock;
     }
 
     //the "main" method (override the run() method) that is executed for the Thread
@@ -37,10 +43,17 @@ public class ServerThread extends Thread
         {
             //create a DataInputStream (using a InputStream in the constructor) that can receive data from the TCP socket
             this.socketStream = new DataInputStream(this.neighborPeer.getSocket().getInputStream());
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
 
             //receieve the initial handshake
             receiveHandshake();
+
+            //wait until the ClientThread pointer has been set by PeerProcess.java
+            synchronized(this.threadsLinkedTogetherLock)
+            {
+                //do nothing
+            }
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " was linked to ClientThread " + this.neighborPeer.getPeerId() + " for message passing purposes.\n");
 
             //continously accept messages at this listening socket until the client closes the TCP socket (which causes a SocketException)
             while(true)
@@ -111,13 +124,13 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
         {
             //this means the socket was closed by a ClientThread process
             //so do nothing (which means the Thread will end naturally)
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY SOCKETEXCEPTION.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY SOCKETEXCEPTION.\n");
         }
         catch(EOFException exception)
         {
             //this means the socket was closed by a ClientThread process
             //so do nothing (which means the Thread will end naturally)
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY EOFEXCEPTION.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY EOFEXCEPTION.\n");
         }
         catch(IOException exception)
         {
@@ -125,7 +138,7 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY E
             exception.printStackTrace();
             System.exit(1);
         }
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
     }
 
     //helper methods
@@ -171,7 +184,7 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
             System.out.print("ERROR: ServerThread.java receieveHandshake() --- from peer " + this.neighborPeer.getPeerId() + " hand shake peerID is " + handshakePeerId + " which does not match.\n");
             System.exit(1);
         }
-System.out.print("ServerThread " + handshakePeerId + " got Handshake.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + handshakePeerId + " got Handshake.\n");
     }
 
     private void receiveBitfield(int payloadLength) throws SocketException, IOException
@@ -185,7 +198,7 @@ System.out.print("ServerThread " + handshakePeerId + " got Handshake.\n");
         //so as to avoid two concurrent threads modifying the bitfield portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(bitfieldAsBytes);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Bitfield and forwarded to ClientThread.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " got Bitfield and forwarded to ClientThread.\n");
     }
 
     private void receiveInterested() throws SocketException, IOException
@@ -194,7 +207,7 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Bitfiel
         //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(true);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Interested message and forwarded to ClientThread.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " got Interested message and forwarded to ClientThread.\n");
     }
 
     private void receiveNotInterested() throws SocketException, IOException
@@ -203,7 +216,7 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Interes
         //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(false);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got NOT-Interested message and forwarded to ClientThread.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " got NOT-Interested message and forwarded to ClientThread.\n");
     }
 
     private void receiveChokeOrUnchoke(boolean choked) throws SocketException, IOException
@@ -214,13 +227,13 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got NOT-Int
         {
             ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.RECEIVEDCHOKE);
             this.clientThread.addThreadMessage(messageToClient);
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Choked message and forwarded to ClientThread.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " got Choked message and forwarded to ClientThread.\n");
         }
         else
         {
             ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.RECEIVEDUNCHOKE);
             this.clientThread.addThreadMessage(messageToClient);
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got UN-Choked message and forwarded to ClientThread.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " got UN-Choked message and forwarded to ClientThread.\n");
         }
     }
 
@@ -233,7 +246,7 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got UN-Chok
         //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.REQUEST, pieceIndex);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Request for Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " got Request for Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
     }
 
     private void receivePiece(int payloadLength) throws SocketException, IOException
@@ -250,7 +263,26 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Request
         //so as to avoid two concurrent threads modifying the bitfield portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(pieceIndex, pieceBytes);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " got Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
+
+        //tell the main PeerProcess to tell all the ClientThreads to notify their peer partners with a "have" message
+        ThreadMessage messageToPeerProcess = new ThreadMessage(ThreadMessage.ThreadMessageType.PEERPROCESSHAVE, pieceIndex);
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " is trying... to tell the PeerProcess to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");
+if(0 == this.messagesToPeerProcess.remainingCapacity())
+{
+System.out.print(LocalDateTime.now() + " PeerProcess (accessing by ServerThread  " + this.neighborPeer.getPeerId() + ") --- QUEUE IS FULL!!!!!.\n");
+}
+        try
+        {
+            this.messagesToPeerProcess.put(messageToPeerProcess);
+        }
+        catch(InterruptedException exception)
+        {
+            System.out.print("\n\n\n\n\nPOSSIBLE ERROR (OR MAY JUST BE HARMLESS EXCEPTION): ServerThread " + this.neighborPeer.getPeerId() + " --- InterupptedException (BlockingQueue).\n");
+            exception.printStackTrace();
+            System.out.print("\n\n\n\n\n");
+        }
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " told the PeerProcess to notify all the ClientThreads to send a Have Piece # " + pieceIndex + " message.\n");
     }
 
     private void receiveHave() throws SocketException, IOException
@@ -262,6 +294,6 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Piece #
         //so as to avoid two concurrent threads modifying the interested portion fo the PeerObject
         ThreadMessage messageToClient = new ThreadMessage(ThreadMessage.ThreadMessageType.HAVE, pieceIndex);
         this.clientThread.addThreadMessage(messageToClient);
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " got Have Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
+System.out.print(LocalDateTime.now() + " ServerThread " + this.neighborPeer.getPeerId() + " got Have Piece # " + pieceIndex + " and forwarded to ClientThread.\n");
     }
 }
