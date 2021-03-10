@@ -223,6 +223,7 @@ public class PeerObject
             {
                 this.hasFile = true;
                 logger.logComplete(this.peerId);
+System.out.print("Peer " + this.peerId + " has downloaded the complete file.\n");
             }
         }
     }
@@ -244,7 +245,7 @@ public class PeerObject
         //Bitset's set() method changes the indicated index to the second parameter's value
         this.piecesNotified.set(pieceIndex, true);
 
-System.out.print("ClientThread " + this.peerId + " notified of having " + this.piecesNotified.cardinality() + " total pieces so far.\n");
+//System.out.print("ClientThread " + this.peerId + " notified of having " + this.piecesNotified.cardinality() + " total pieces so far.\n");
         //check if this causes the all the pieces to have been notified
         if(ReadCommon.getNumberOfPieces() == this.piecesNotified.cardinality())
         {
@@ -312,14 +313,20 @@ System.out.print("ClientThread " + this.peerId + " notified of having " + this.p
     }
     public void debugPrintOutgoingRequests()
     {
-        System.out.print(this.peerId + " current outgoing requests: ");
+        System.out.print(this.peerId + "'s current outgoing requests are: ");
+        boolean hasRequest = false;
         //print the list of current outgoing requests
         for(int i = 0; i < this.requested.length; i++)
         {
             if(-1 != this.requested[i])
             {
-                System.out.print("Piece # " + i + " from " + this.requested[i] + "---");
+                System.out.print("Piece # " + i + " from peer " + this.requested[i] + "-");
+                hasRequest = true;
             }
+        }
+        if(false == hasRequest)
+        {
+            System.out.print("[none]");
         }
         System.out.print("\n");
     }

@@ -268,16 +268,16 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
                 this.unchokingTimer = System.currentTimeMillis();
                 unchokeOptimistic();
                 this.optimisticUnchokingTimer = System.currentTimeMillis();
-// System.out.print(LocalDateTime.now() + " INITIAL RANDOM: Unchoked Status: ");
-// for(int i = 0; i < this.neighborPeers.length; i++)
-// {
-// System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
-// if(this.neighborPeers[i] == this.optimisticPeer)
-// {
-// System.out.print("<===OPTIMISTIC ");
-// }
-// }
-// System.out.print("\n");
+System.out.print("INITIAL (RANDOM): Choked? Status: ");
+for(int i = 0; i < this.neighborPeers.length; i++)
+{
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
+if(this.neighborPeers[i] == this.optimisticPeer)
+{
+System.out.print("<===OPTIMISTIC ");
+}
+}
+System.out.print("\n");
             }
             else
             {
@@ -296,16 +296,16 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
                         selectivelyUnchokePreferred();
                         this.unchokingTimer = System.currentTimeMillis();
                     }
-// System.out.print(LocalDateTime.now() + " (PREFERRED TIMED OUT): Choked? Status: ");
-// for(int i = 0; i < this.neighborPeers.length; i++)
-// {
-// System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
-// if(this.neighborPeers[i] == this.optimisticPeer)
-// {
-// System.out.print("<===OPTIMISTIC ");
-// }
-// }
-// System.out.print("\n");
+System.out.print("(PREFERRED TIMED OUT): Choked? Status: ");
+for(int i = 0; i < this.neighborPeers.length; i++)
+{
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
+if(this.neighborPeers[i] == this.optimisticPeer)
+{
+System.out.print("<===OPTIMISTIC ");
+}
+}
+System.out.print("\n");
                 }
 
                 //evaluate if the optimistic choking interval time has passed
@@ -313,16 +313,16 @@ System.out.print("Peer " + myPeerId + " accepted connection from " + peers.get(i
                 {
                     unchokeOptimistic();
                     this.optimisticUnchokingTimer = System.currentTimeMillis();
-// System.out.print(LocalDateTime.now() + " (OPTIMISTIC TIMED OUT): Choked? Status: ");
-// for(int i = 0; i < this.neighborPeers.length; i++)
-// {
-// System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
-// if(this.neighborPeers[i] == this.optimisticPeer)
-// {
-// System.out.print("<===OPTIMISTIC ");
-// }
-// }
-// System.out.print("\n");
+System.out.print("(OPTIMISTIC TIMED OUT): Choked? Status: ");
+for(int i = 0; i < this.neighborPeers.length; i++)
+{
+System.out.print("Peer " + this.neighborPeers[i].getPeerId() + "->" + this.neighborPeers[i].getMyChoked() + " - ");
+if(this.neighborPeers[i] == this.optimisticPeer)
+{
+System.out.print("<===OPTIMISTIC ");
+}
+}
+System.out.print("\n");
                 }   
             }
         }

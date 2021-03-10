@@ -47,7 +47,7 @@ public class ClientThread extends Thread
     {
         try
         {
-System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n");
             //create a DataOutputStream (using a OutputStream in the constructor) that can send data to the TCP socket
             this.socketStream = new DataOutputStream(this.neighborPeer.getSocket().getOutputStream());
 
@@ -127,7 +127,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
 
             //close the socket (which should cause the ServerThread to close via SocketException or EOFException)
             this.neighborPeer.getSocket().close();
-System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to kill itself.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to kill itself.\n");
         }
         catch(InterruptedException exception)
         {
@@ -141,7 +141,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
             exception.printStackTrace();
             System.out.print("\n\n\n\n\n");
         }
-System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " ENDED.\n");
     }
 
     //helper methods
@@ -191,7 +191,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
 
         //send the 4-byte int peerId
         socketStream.writeInt(this.myPeer.getPeerId());
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Handshake.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Handshake to peer " + this.neighborPeer.getPeerId() + ".\n");
     }
 
     private void sendBitfield() throws IOException
@@ -221,7 +221,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
                 }
             }
         }
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Bitfield.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Bitfield to peer " + this.neighborPeer.getPeerId() + ".\n");
     }
 
     private void processBitfieldMessage(ThreadMessage bitfieldMessage) throws IOException
@@ -280,7 +280,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
 
         //send the 1-byte message type (2 = interested)
         socketStream.writeByte(2);
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Interested message.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Interested message to peer " + this.neighborPeer.getPeerId() + ".\n");
     }
 
     private void sendNotInterested() throws IOException
@@ -292,7 +292,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
 
         //send the 1-byte message type (3 = not interested)
         socketStream.writeByte(3);
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent NOT-Interested.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent NOT-Interested to peer " + this.neighborPeer.getPeerId() + ".\n");
     }
 
     private void processInterestStatusMessage(ThreadMessage interestStatusMessage)
@@ -327,7 +327,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
 
             //update status of neighborWasToldChoked to true
             this.neighborPeer.setNeighborWasToldChoked(true);
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Choke as commanded by PeerProcess.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Choke message to " + this.neighborPeer.getPeerId() + ".\n");
         }
         else
         {
@@ -336,7 +336,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
 
             //update status of neighborWasToldChoked to false
             this.neighborPeer.setNeighborWasToldChoked(false);
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent UN-Choke as commanded by PeerProcess.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent UN-Choke message to " + this.neighborPeer.getPeerId() + ".\n");
         }
     }
 
@@ -402,7 +402,7 @@ System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getP
                 }
 else
 {
-//System.out.print("\n\n\n" + LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " didn't qualify for sendPiece(), probably due to unchoke change --- IT ACTUALLY HAPPENED!!!\n\n\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " determined that peer " + this.neighborPeer.getPeerId() + " didn't qualify for sendPiece(), probably due to unchoke change.");
 }
                 //clear the "neighborRequestedPiece" field
                 this.neighborPeer.setNeighborRequestedPiece(-1);
@@ -452,7 +452,7 @@ else
             //send the piece itself
             byte[] pieceContents = this.myPeer.getFileWriter().readPiece(pieceIndex);
             socketStream.write(pieceContents, 0, pieceContents.length);
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Piece # " + pieceIndex + ".\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Piece # " + pieceIndex + " to peer " + this.neighborPeer.getPeerId() + ".\n");
         }
 //System.out.print(LocalDateTime.now() + "[sendPiece()] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n");   
     }
@@ -558,7 +558,7 @@ else
                         sendRequest(potentialRequestPieces.get(randomIndex));
                     }
                 }
-this.myPeer.debugPrintOutgoingRequests();
+//this.myPeer.debugPrintOutgoingRequests();
             }
 //System.out.print(LocalDateTime.now() + "[determineRequest()] ClientThread " + this.neighborPeer.getPeerId() + " released peerProcessLock.\n");
         }
@@ -577,7 +577,7 @@ this.myPeer.debugPrintOutgoingRequests();
 
         //send the 4-byte int piece that is requested
         socketStream.writeInt(pieceIndex);
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Request Piece # " + pieceIndex + " message.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Request for Piece # " + pieceIndex + " to peer " + this.neighborPeer.getPeerId() + ".\n");
     }
 
     private void sendHave(ThreadMessage messageFromPeerProcess) throws IOException
@@ -621,7 +621,7 @@ this.myPeer.debugPrintOutgoingRequests();
 //System.out.print(LocalDateTime.now() + "[sendHave()] ClientThread " + this.neighborPeer.getPeerId() + " released peerProcessLock.\n");
         }
 //System.out.print(LocalDateTime.now() + "[sendHave()] ClientThread " + this.neighborPeer.getPeerId() + " released clientThreadLock.\n");
-//System.out.print(LocalDateTime.now() + " ClientThread " + this.neighborPeer.getPeerId() + " sent Have Piece # " + havePieceIndex + " message.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " sent Have Piece # " + havePieceIndex + " message to peer " + this.neighborPeer.getPeerId() + ".\n");
     }
 
     private void processHave(ThreadMessage pieceMessage) throws IOException
