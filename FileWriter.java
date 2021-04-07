@@ -18,7 +18,7 @@ public class FileWriter
     public FileWriter(int peerId)
     {
         //project specifications states that file should be stored in a "peer_[peer_id]" sub-folder
-        String fileName = "peer_" + Integer.toString(peerId) + "\\" + ReadCommon.getFileName();
+        String fileName = "peer_" + Integer.toString(peerId) + "/" + ReadCommon.getFileName();
 
         try
         {
