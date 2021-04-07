@@ -103,9 +103,6 @@ public class peerProcess extends Thread
         ReadPeerInfo readPeerInfoInstance = new ReadPeerInfo();
         List<PeerObject> peers = readPeerInfoInstance.getPeersInfo();
 
-        //start a LogWriter instance
-        this.logger = new LogWriter(myPeerId);
-
         //check if there are at least 2 peers
         if(2 > peers.size())
         {
@@ -122,11 +119,17 @@ public class peerProcess extends Thread
         }
         //assign this process's peer to the myPeer parameter
         this.myPeer = peers.get(myPeerIndexPosition);
+
+        //start a LogWriter instance
+        this.logger = new LogWriter(myPeerId);
         //if this process's peer already has the file, then log it as having "completed the download" already (technically it didn't download anything)
         if(true == this.myPeer.getHasFile())
         {
             this.logger.logComplete(this.myPeer.getPeerId());
         }
+
+        //start a FileWriter for only the peer that this PeerProcess was started for
+        this.myPeer.setFileWriter();
 
         //the neighborPeers array will hold all the peers that are not this process's own peers
         //with the ordering of the peers being starting from this process's peer list downwards (and looping back to the top)

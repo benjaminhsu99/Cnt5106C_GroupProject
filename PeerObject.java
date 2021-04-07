@@ -39,8 +39,6 @@ public class PeerObject
         this.portNumber = portNumber;
         this.hasFile = hasFile;
 
-        this.fileWriter = new FileWriter(this.peerId);
-
         this.socket = null;
         this.bytesDownloadedFrom = 0;
 
@@ -105,6 +103,10 @@ public class PeerObject
     public boolean getHasFile()
     {
         return this.hasFile;
+    }
+    public void setFileWriter()
+    {
+        this.fileWriter = new FileWriter(this.peerId);
     }
     public FileWriter getFileWriter()
     {
