@@ -4,9 +4,6 @@ Group Project - P2P File Sharing
 Benjamin Hsu, Lavanya Khular, Chitranshu Raj
 */
 
-//Created package to group together all the various .java files together
-package src.modules;
-
 //Imports
 import java.io.*; //Exceptions
 import java.util.*; //BitSet

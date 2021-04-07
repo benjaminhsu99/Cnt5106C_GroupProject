@@ -4,10 +4,7 @@ Group Project - P2P File Sharing
 Benjamin Hsu, Lavanya Khular, Chitranshu Raj
 */
 
-package src;
-
 //Imports
-import src.modules.*;
 import java.util.*; //List, ArrayList, Iterator, Random
 import java.nio.file.*; //Files, Path
 import java.net.*; //Socket
@@ -15,7 +12,7 @@ import java.io.*; //IOException, OutputStream, DataOutputStream
 import java.util.concurrent.*; //ArrayBlockingQueue
 import java.time.*; //LocalDateTime
 
-public class PeerProcess extends Thread
+public class peerProcess extends Thread
 {
     //MAIN METHOD
     public static void main(String[] args)
@@ -41,7 +38,7 @@ public class PeerProcess extends Thread
 
         //read the ".cfg" files
         //the constructor also starts TCP connections to neighbor peers
-        PeerProcess myPeerProcess = new PeerProcess(myPeerId);
+        peerProcess myPeerProcess = new peerProcess(myPeerId);
 
         //don't let the server threads process any info until they have received their pointer to the client thread
         //(for delegation of PeerObject modifications tasks for the ClientThread to do)
@@ -100,7 +97,7 @@ public class PeerProcess extends Thread
     private volatile BlockingQueue<ThreadMessage> messagesFromThreads = new ArrayBlockingQueue<ThreadMessage>(999);
 
     //class constructor - which also sets up the TCP connections
-    PeerProcess(int myPeerId)
+    peerProcess(int myPeerId)
     {
         //read the PeerInfo.cfg file
         ReadPeerInfo readPeerInfoInstance = new ReadPeerInfo();
