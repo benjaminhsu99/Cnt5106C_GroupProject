@@ -121,13 +121,13 @@ System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
         {
             //this means the socket was closed by a ClientThread process
             //so do nothing (which means the Thread will end naturally)
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY SOCKETEXCEPTION.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " TERMINATED BY SOCKETEXCEPTION.\n");
         }
         catch(EOFException exception)
         {
             //this means the socket was closed by a ClientThread process
             //so do nothing (which means the Thread will end naturally)
-System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " KILLED BY EOFEXCEPTION.\n");
+System.out.print("ServerThread " + this.neighborPeer.getPeerId() + " TERMINATED BY EOFEXCEPTION.\n");
         }
         catch(IOException exception)
         {

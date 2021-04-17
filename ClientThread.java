@@ -124,7 +124,7 @@ System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " STARTED.\n"
 
             //close the socket (which should cause the ServerThread to close via SocketException or EOFException)
             this.neighborPeer.getSocket().close();
-System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to kill itself.\n");
+System.out.print("ClientThread " + this.neighborPeer.getPeerId() + " told ServerThread to terminate.\n");
         }
         catch(InterruptedException exception)
         {
